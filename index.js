@@ -386,62 +386,92 @@ const FAB_HTML = `<div id="lumina-fab" title="Lumina Search">${ICONS.lumina}</di
 function setupDrag($fab, onTap) {
     let isFabDragging = false;
     let fabMoved = false;
-    let fabClickAllowed = true;
     let fabOffset = { x: 0, y: 0 };
+    let pendingTap = false;
 
-    function getCoords(e) {
-        const ev = e.originalEvent || e;
+    function getCoords(ev) {
         if (ev.touches && ev.touches[0]) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+        if (ev.changedTouches && ev.changedTouches[0]) return { x: ev.changedTouches[0].clientX, y: ev.changedTouches[0].clientY };
         return { x: ev.clientX, y: ev.clientY };
     }
 
-    // Click + touchend: toggle panel (only if not dragging)
-    $fab.on('click touchend', function(e) {
-        if (!fabClickAllowed) return;
-        e.preventDefault();
-        e.stopPropagation();
-        onTap();
-    });
-
     // Drag start
-    $fab.on('mousedown touchstart', function(e) {
+    $fab[0].addEventListener('touchstart', function(e) {
         isFabDragging = true;
         fabMoved = false;
-        fabClickAllowed = true;
-        const pos = $fab.position();
-        $fab.css({ top: pos.top + 'px', left: pos.left + 'px', right: 'auto', bottom: 'auto' });
-        const coords = getCoords(e.originalEvent || e);
+        pendingTap = true;
+        const pos = { left: $fab[0].offsetLeft, top: $fab[0].offsetTop };
+        const coords = getCoords(e);
         fabOffset = { x: coords.x - pos.left, y: coords.y - pos.top };
-        // НЕ делаем preventDefault — иначе touchend не сработает на мобиле
+    }, { passive: true });
+
+    $fab[0].addEventListener('mousedown', function(e) {
+        isFabDragging = true;
+        fabMoved = false;
+        pendingTap = false; // mouse uses click event instead
+        const pos = { left: $fab[0].offsetLeft, top: $fab[0].offsetTop };
+        fabOffset = { x: e.clientX - pos.left, y: e.clientY - pos.top };
     });
 
     // Drag move
-    $(document).on('mousemove touchmove', function(e) {
+    document.addEventListener('touchmove', function(e) {
         if (!isFabDragging) return;
-        fabMoved = true;
-        fabClickAllowed = false;
-        const ev = e.originalEvent || e;
-        const coords = ev.touches && ev.touches[0]
-            ? { x: ev.touches[0].clientX, y: ev.touches[0].clientY }
-            : { x: ev.clientX, y: ev.clientY };
-        const w = $fab.outerWidth(), h = $fab.outerHeight();
+        const coords = getCoords(e);
+        const dx = coords.x - fabOffset.x - $fab[0].offsetLeft;
+        const dy = coords.y - fabOffset.y - $fab[0].offsetTop;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+            fabMoved = true;
+            pendingTap = false;
+        }
+        if (!fabMoved) return;
+        const w = $fab[0].offsetWidth, h = $fab[0].offsetHeight;
         const nx = Math.max(0, Math.min(coords.x - fabOffset.x, window.innerWidth - w));
         const ny = Math.max(0, Math.min(coords.y - fabOffset.y, window.innerHeight - h));
-        $fab.css({ top: ny + 'px', left: nx + 'px' });
-        e.preventDefault();
+        $fab.css({ top: ny + 'px', left: nx + 'px', right: 'auto', bottom: 'auto' });
+    }, { passive: true });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!isFabDragging) return;
+        fabMoved = true;
+        const w = $fab[0].offsetWidth, h = $fab[0].offsetHeight;
+        const nx = Math.max(0, Math.min(e.clientX - fabOffset.x, window.innerWidth - w));
+        const ny = Math.max(0, Math.min(e.clientY - fabOffset.y, window.innerHeight - h));
+        $fab.css({ top: ny + 'px', left: nx + 'px', right: 'auto', bottom: 'auto' });
     });
 
-    // Drag end
-    $(document).on('mouseup touchend', function() {
-        if (isFabDragging) {
-            isFabDragging = false;
-            if (fabMoved) {
-                const rect = $fab[0].getBoundingClientRect();
-                saveSetting('fab_x', Math.round(rect.left));
-                saveSetting('fab_y', Math.round(rect.top));
-                setTimeout(() => { fabClickAllowed = true; }, 50);
-            }
+    // Touch end — tap or drag end
+    $fab[0].addEventListener('touchend', function(e) {
+        if (!isFabDragging) return;
+        isFabDragging = false;
+        if (pendingTap && !fabMoved) {
+            // Это был тап — открываем панель
+            e.preventDefault();
+            pendingTap = false;
+            onTap();
+        } else {
+            // Было перетаскивание — сохраняем позицию
+            pendingTap = false;
+            const rect = $fab[0].getBoundingClientRect();
+            saveSetting('fab_x', Math.round(rect.left));
+            saveSetting('fab_y', Math.round(rect.top));
         }
+    }, { passive: false });
+
+    // Mouse end
+    document.addEventListener('mouseup', function() {
+        if (!isFabDragging) return;
+        isFabDragging = false;
+        if (fabMoved) {
+            const rect = $fab[0].getBoundingClientRect();
+            saveSetting('fab_x', Math.round(rect.left));
+            saveSetting('fab_y', Math.round(rect.top));
+        }
+    });
+
+    // Desktop click (mouse only, not touch)
+    $fab[0].addEventListener('click', function(e) {
+        if (fabMoved) { fabMoved = false; return; }
+        onTap();
     });
 
     // Restore position
