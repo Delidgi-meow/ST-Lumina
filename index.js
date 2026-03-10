@@ -28,10 +28,9 @@ const DEFAULT_SETTINGS = {
 // ---- SVG ICONS ----
 
 const ICONS = {
-    lumina: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M12 2v3m0 14v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M2 12h3m14 0h3M4.22 19.78l2.12-2.12m11.32-11.32l2.12-2.12"/>
-        <circle cx="12" cy="12" r="8" opacity="0.2" stroke-dasharray="2 3"/>
+    lumina: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4" fill="currentColor" fill-opacity="0.15"/>
+        <path d="M12 2v2.5M12 19.5V22M4.22 4.22l1.77 1.77M18.01 18.01l1.77 1.77M2 12h2.5M19.5 12H22M4.22 19.78l1.77-1.77M18.01 5.99l1.77-1.77"/>
     </svg>`,
     search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -387,6 +386,7 @@ const FAB_HTML = `<div id="lumina-fab" title="Lumina Search">${ICONS.lumina}</di
 function setupDrag($fab, onTap) {
     let dragging = false;
     let moved = false;
+    let tappedByTouch = false;
     let startX = 0, startY = 0, fabStartX = 0, fabStartY = 0;
 
     function xy(e) {
@@ -446,24 +446,21 @@ function setupDrag($fab, onTap) {
     // Tap (click fires on mouse AND touch after touchend on most browsers)
     $fab.on('click', function(e) {
         if (moved) { moved = false; return; } // was a drag, skip
+        if (tappedByTouch) return; // already handled by touchend
         e.preventDefault();
         e.stopPropagation();
         onTap();
     });
 
     // Fallback: some mobile browsers don't fire click after touch
-    let lastTouchEnd = 0;
+    let tappedByTouch = false;
     $fab.on('touchend', function(e) {
         if (moved) { moved = false; return; }
-        // Debounce: skip if click will fire within 300ms
-        lastTouchEnd = Date.now();
-        setTimeout(() => {
-            // Only fire if click didn't already handle it
-            if (Date.now() - lastTouchEnd >= 280) return;
-            e.preventDefault();
-            e.stopPropagation();
-            onTap();
-        }, 300);
+        e.preventDefault();
+        e.stopPropagation();
+        tappedByTouch = true;
+        onTap();
+        setTimeout(() => { tappedByTouch = false; }, 350);
     });
 
     // Restore position
