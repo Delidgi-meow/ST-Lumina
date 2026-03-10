@@ -388,56 +388,95 @@ function setupDrag($fab, onTap) {
     let dragMoved = false;
     let startX = 0, startY = 0;
     let startLeft = 0, startTop = 0;
-    const DRAG_THRESHOLD = 8; // px — меньше этого считается тапом
+    const THRESHOLD = 8;
 
-    function clientXY(e) {
-        const ev = e.originalEvent || e;
-        if (ev.touches && ev.touches[0]) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
-        return { x: ev.clientX, y: ev.clientY };
+    const fabEl = $fab[0];
+
+    function getXY(e) {
+        if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        if (e.changedTouches && e.changedTouches[0]) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+        return { x: e.clientX, y: e.clientY };
     }
 
-    $fab.on('mousedown touchstart', function(e) {
+    // touchstart на элементе — passive:true чтобы не блокировать скролл
+    fabEl.addEventListener('touchstart', function(e) {
         dragging = true;
         dragMoved = false;
-        const c = clientXY(e);
+        const c = getXY(e);
         startX = c.x;
         startY = c.y;
-        // Берём позицию через getBoundingClientRect — работает корректно и на мобиле
-        const rect = $fab[0].getBoundingClientRect();
+        const rect = fabEl.getBoundingClientRect();
         startLeft = rect.left;
         startTop = rect.top;
-        // Фиксируем текущую позицию через left/top чтобы right/bottom не мешали
-        $fab.css({ position: 'fixed', left: startLeft + 'px', top: startTop + 'px', right: 'auto', bottom: 'auto' });
-    });
+        $fab.css({ left: startLeft + 'px', top: startTop + 'px', right: 'auto', bottom: 'auto' });
+    }, { passive: true });
 
-    $(document).on('mousemove.lumfab touchmove.lumfab', function(e) {
+    // touchmove на элементе
+    fabEl.addEventListener('touchmove', function(e) {
         if (!dragging) return;
-        const c = clientXY(e);
+        const c = getXY(e);
         const dx = c.x - startX;
         const dy = c.y - startY;
-        if (!dragMoved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
-            dragMoved = true;
-        }
+        if (Math.abs(dx) > THRESHOLD || Math.abs(dy) > THRESHOLD) dragMoved = true;
         if (!dragMoved) return;
-        e.preventDefault();
-        const w = $fab.outerWidth(), h = $fab.outerHeight();
+        const w = fabEl.offsetWidth, h = fabEl.offsetHeight;
+        const nx = Math.max(0, Math.min(startLeft + dx, window.innerWidth - w));
+        const ny = Math.max(0, Math.min(startTop + dy, window.innerHeight - h));
+        $fab.css({ left: nx + 'px', top: ny + 'px' });
+    }, { passive: true });
+
+    // touchend на элементе — здесь решаем: тап или drag
+    fabEl.addEventListener('touchend', function(e) {
+        if (!dragging) return;
+        dragging = false;
+        if (!dragMoved) {
+            // ТАП
+            e.preventDefault();
+            onTap();
+        } else {
+            // DRAG — сохраняем позицию
+            const rect = fabEl.getBoundingClientRect();
+            saveSetting('fab_x', Math.round(rect.left));
+            saveSetting('fab_y', Math.round(rect.top));
+        }
+        dragMoved = false;
+    }, { passive: false });
+
+    // Мышь (десктоп)
+    $fab.on('mousedown', function(e) {
+        dragging = true;
+        dragMoved = false;
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = fabEl.getBoundingClientRect();
+        startLeft = rect.left;
+        startTop = rect.top;
+        $fab.css({ left: startLeft + 'px', top: startTop + 'px', right: 'auto', bottom: 'auto' });
+    });
+
+    $(document).on('mousemove.lumfab', function(e) {
+        if (!dragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if (Math.abs(dx) > THRESHOLD || Math.abs(dy) > THRESHOLD) dragMoved = true;
+        if (!dragMoved) return;
+        const w = fabEl.offsetWidth, h = fabEl.offsetHeight;
         const nx = Math.max(0, Math.min(startLeft + dx, window.innerWidth - w));
         const ny = Math.max(0, Math.min(startTop + dy, window.innerHeight - h));
         $fab.css({ left: nx + 'px', top: ny + 'px' });
     });
 
-    $(document).on('mouseup.lumfab touchend.lumfab', function() {
+    $(document).on('mouseup.lumfab', function() {
         if (!dragging) return;
         dragging = false;
         if (dragMoved) {
-            // Сохраняем новую позицию
-            const rect = $fab[0].getBoundingClientRect();
+            const rect = fabEl.getBoundingClientRect();
             saveSetting('fab_x', Math.round(rect.left));
             saveSetting('fab_y', Math.round(rect.top));
         } else {
-            // Это был тап — открываем/закрываем панель
             onTap();
         }
+        dragMoved = false;
     });
 
     // Восстановление позиции
