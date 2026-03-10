@@ -443,17 +443,7 @@ function setupDrag($fab, onTap) {
         }
     });
 
-    // Tap (click fires on mouse AND touch after touchend on most browsers)
-    $fab.on('click', function(e) {
-        if (moved) { moved = false; return; } // was a drag, skip
-        if (tappedByTouch) return; // already handled by touchend
-        e.preventDefault();
-        e.stopPropagation();
-        onTap();
-    });
-
-    // Fallback: some mobile browsers don't fire click after touch
-    let tappedByTouch = false;
+    // Fallback: touchend fires reliably on mobile
     $fab.on('touchend', function(e) {
         if (moved) { moved = false; return; }
         e.preventDefault();
@@ -461,6 +451,15 @@ function setupDrag($fab, onTap) {
         tappedByTouch = true;
         onTap();
         setTimeout(() => { tappedByTouch = false; }, 350);
+    });
+
+    // Desktop click (skip if already handled by touchend)
+    $fab.on('click', function(e) {
+        if (moved) { moved = false; return; }
+        if (tappedByTouch) return;
+        e.preventDefault();
+        e.stopPropagation();
+        onTap();
     });
 
     // Restore position
