@@ -1,0 +1,758 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    /* Lumina Palette */
+    --lum-void: #0c0c11;
+    --lum-deep: #111117;
+    --lum-surface: #17171f;
+    --lum-elevated: #1e1e28;
+    --lum-subtle: #2a2a36;
+
+    --lum-text-primary: #e8e4df;
+    --lum-text-secondary: #8e8a83;
+    --lum-text-muted: #5a574f;
+
+    --lum-mint: #7DF9C1;
+    --lum-mint-dim: #4aad82;
+    --lum-mint-glow: rgba(125, 249, 193, 0.12);
+    --lum-mint-glow-strong: rgba(125, 249, 193, 0.25);
+
+    --lum-amber: #F5C27A;
+    --lum-amber-dim: #b8914a;
+    --lum-amber-glow: rgba(245, 194, 122, 0.12);
+    --lum-amber-glow-strong: rgba(245, 194, 122, 0.25);
+
+    --lum-rose: #E8A0BF;
+    --lum-rose-glow: rgba(232, 160, 191, 0.1);
+
+    --lum-danger: #F07070;
+    --lum-danger-glow: rgba(240, 112, 112, 0.15);
+
+    --lum-radius: 10px;
+    --lum-radius-sm: 6px;
+    --lum-radius-lg: 14px;
+    --lum-font: 'Outfit', system-ui, sans-serif;
+    --lum-mono: 'JetBrains Mono', monospace;
+    --lum-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- PANEL CONTAINER ---- */
+
+#lumina-panel {
+    position: fixed;
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    font-family: var(--lum-font);
+    color: var(--lum-text-primary);
+    -webkit-font-smoothing: antialiased;
+}
+
+#lumina-panel.lum-visible {
+    display: flex;
+}
+
+/* Desktop: side panel */
+@media (min-width: 769px) {
+    #lumina-panel {
+        top: 0;
+        right: 0;
+        width: 380px;
+        height: 100vh;
+        background: var(--lum-void);
+        border-left: 1px solid rgba(125, 249, 193, 0.06);
+        box-shadow:
+            -20px 0 60px rgba(0, 0, 0, 0.5),
+            -4px 0 20px rgba(125, 249, 193, 0.03);
+    }
+}
+
+/* Mobile: bottom sheet */
+@media (max-width: 768px) {
+    #lumina-panel {
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-height: 85vh;
+        background: var(--lum-void);
+        border-top: 1px solid rgba(125, 249, 193, 0.06);
+        border-radius: var(--lum-radius-lg) var(--lum-radius-lg) 0 0;
+        box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.6);
+    }
+}
+
+/* ---- HEADER ---- */
+
+.lum-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    flex-shrink: 0;
+}
+
+.lum-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lum-logo-icon {
+    width: 28px;
+    height: 28px;
+    position: relative;
+}
+
+.lum-logo-icon svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 6px rgba(125, 249, 193, 0.4));
+}
+
+.lum-logo-text {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--lum-text-secondary);
+}
+
+.lum-logo-text span {
+    color: var(--lum-mint);
+}
+
+.lum-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.lum-icon-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: var(--lum-radius-sm);
+    color: var(--lum-text-muted);
+    cursor: pointer;
+    transition: var(--lum-transition);
+    padding: 0;
+}
+
+.lum-icon-btn:hover {
+    color: var(--lum-text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.lum-icon-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ---- BODY (scrollable) ---- */
+
+.lum-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--lum-subtle) transparent;
+}
+
+.lum-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.lum-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.lum-body::-webkit-scrollbar-thumb {
+    background: var(--lum-subtle);
+    border-radius: 2px;
+}
+
+/* ---- SEARCH INPUT AREA ---- */
+
+.lum-search-wrap {
+    position: relative;
+}
+
+.lum-search-textarea {
+    width: 100%;
+    min-height: 80px;
+    max-height: 200px;
+    resize: vertical;
+    background: var(--lum-deep);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--lum-radius);
+    padding: 14px 16px;
+    padding-bottom: 48px;
+    font-family: var(--lum-font);
+    font-size: 13.5px;
+    font-weight: 300;
+    line-height: 1.6;
+    color: var(--lum-text-primary);
+    transition: var(--lum-transition);
+    box-sizing: border-box;
+    outline: none;
+}
+
+.lum-search-textarea::placeholder {
+    color: var(--lum-text-muted);
+    font-style: italic;
+}
+
+.lum-search-textarea:focus {
+    border-color: rgba(245, 194, 122, 0.2);
+    box-shadow:
+        0 0 0 1px rgba(245, 194, 122, 0.08),
+        0 0 30px rgba(245, 194, 122, 0.06),
+        inset 0 0 20px rgba(245, 194, 122, 0.02);
+}
+
+.lum-search-controls {
+    position: absolute;
+    bottom: 10px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lum-token-hint {
+    font-family: var(--lum-mono);
+    font-size: 10px;
+    color: var(--lum-text-muted);
+    letter-spacing: 0.05em;
+}
+
+.lum-search-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, rgba(125, 249, 193, 0.12), rgba(125, 249, 193, 0.06));
+    border: 1px solid rgba(125, 249, 193, 0.15);
+    border-radius: var(--lum-radius-sm);
+    color: var(--lum-mint);
+    font-family: var(--lum-font);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: var(--lum-transition);
+    text-transform: uppercase;
+}
+
+.lum-search-btn:hover {
+    background: linear-gradient(135deg, rgba(125, 249, 193, 0.2), rgba(125, 249, 193, 0.1));
+    box-shadow: 0 0 20px rgba(125, 249, 193, 0.1);
+}
+
+.lum-search-btn:active {
+    transform: scale(0.97);
+}
+
+.lum-search-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.lum-search-btn svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* ---- LOADING STATE ---- */
+
+.lum-loading {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px 16px;
+    color: var(--lum-text-muted);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.lum-loading.active {
+    display: flex;
+}
+
+.lum-pulse-ring {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(125, 249, 193, 0.15);
+    border-top-color: var(--lum-mint);
+    border-radius: 50%;
+    animation: lum-spin 0.8s linear infinite;
+}
+
+@keyframes lum-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ---- RESULT AREA ---- */
+
+.lum-result-wrap {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    animation: lum-fade-up 0.4s ease-out;
+}
+
+.lum-result-wrap.active {
+    display: flex;
+}
+
+@keyframes lum-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.lum-result-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--lum-mono);
+    font-size: 10px;
+    color: var(--lum-mint-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.lum-result-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--lum-mint);
+    box-shadow: 0 0 8px rgba(125, 249, 193, 0.5);
+    animation: lum-breathe 3s ease-in-out infinite;
+}
+
+@keyframes lum-breathe {
+    0%, 100% { box-shadow: 0 0 6px rgba(125, 249, 193, 0.3); }
+    50% { box-shadow: 0 0 14px rgba(125, 249, 193, 0.6); }
+}
+
+.lum-result-content {
+    background: var(--lum-deep);
+    border: 1px solid rgba(125, 249, 193, 0.06);
+    border-radius: var(--lum-radius);
+    padding: 16px;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--lum-text-primary);
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    box-shadow:
+        0 0 30px rgba(125, 249, 193, 0.03),
+        inset 0 0 30px rgba(125, 249, 193, 0.01);
+    scrollbar-width: thin;
+    scrollbar-color: var(--lum-subtle) transparent;
+}
+
+.lum-result-content::-webkit-scrollbar {
+    width: 3px;
+}
+
+.lum-result-content::-webkit-scrollbar-thumb {
+    background: var(--lum-subtle);
+    border-radius: 2px;
+}
+
+/* ---- ACTION BUTTONS ---- */
+
+.lum-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.lum-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: var(--lum-radius-sm);
+    font-family: var(--lum-font);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: var(--lum-transition);
+    border: 1px solid;
+}
+
+.lum-action-btn svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+/* Inject button */
+.lum-btn-inject {
+    background: linear-gradient(135deg, rgba(125, 249, 193, 0.1), rgba(125, 249, 193, 0.04));
+    border-color: rgba(125, 249, 193, 0.15);
+    color: var(--lum-mint);
+}
+
+.lum-btn-inject:hover {
+    background: linear-gradient(135deg, rgba(125, 249, 193, 0.18), rgba(125, 249, 193, 0.08));
+    box-shadow: 0 0 24px rgba(125, 249, 193, 0.08);
+}
+
+/* Copy button */
+.lum-btn-copy {
+    background: linear-gradient(135deg, rgba(245, 194, 122, 0.08), rgba(245, 194, 122, 0.03));
+    border-color: rgba(245, 194, 122, 0.12);
+    color: var(--lum-amber);
+}
+
+.lum-btn-copy:hover {
+    background: linear-gradient(135deg, rgba(245, 194, 122, 0.15), rgba(245, 194, 122, 0.06));
+    box-shadow: 0 0 24px rgba(245, 194, 122, 0.08);
+}
+
+/* Clear button */
+.lum-btn-clear {
+    flex: 0 0 auto;
+    width: 36px;
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.06);
+    color: var(--lum-text-muted);
+    padding: 10px 0;
+}
+
+.lum-btn-clear:hover {
+    border-color: rgba(240, 112, 112, 0.2);
+    color: var(--lum-danger);
+    background: var(--lum-danger-glow);
+}
+
+/* ---- INJECT STATUS TOAST ---- */
+
+.lum-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    padding: 10px 20px;
+    border-radius: var(--lum-radius);
+    font-family: var(--lum-font);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 10001;
+}
+
+.lum-toast.lum-toast-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.lum-toast-success {
+    background: var(--lum-surface);
+    border: 1px solid rgba(125, 249, 193, 0.2);
+    color: var(--lum-mint);
+    box-shadow: 0 4px 20px rgba(125, 249, 193, 0.1);
+}
+
+.lum-toast-error {
+    background: var(--lum-surface);
+    border: 1px solid rgba(240, 112, 112, 0.2);
+    color: var(--lum-danger);
+    box-shadow: 0 4px 20px rgba(240, 112, 112, 0.1);
+}
+
+/* ---- SETTINGS PANEL ---- */
+
+.lum-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 12px 0 0;
+}
+
+.lum-settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.lum-settings-label {
+    font-family: var(--lum-mono);
+    font-size: 10px;
+    color: var(--lum-text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.lum-settings-input {
+    width: 100%;
+    background: var(--lum-deep);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--lum-radius-sm);
+    padding: 10px 12px;
+    font-family: var(--lum-mono);
+    font-size: 12px;
+    color: var(--lum-text-primary);
+    outline: none;
+    transition: var(--lum-transition);
+    box-sizing: border-box;
+}
+
+.lum-settings-input:focus {
+    border-color: rgba(245, 194, 122, 0.2);
+    box-shadow: 0 0 16px rgba(245, 194, 122, 0.05);
+}
+
+.lum-settings-textarea {
+    width: 100%;
+    min-height: 60px;
+    resize: vertical;
+    background: var(--lum-deep);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--lum-radius-sm);
+    padding: 10px 12px;
+    font-family: var(--lum-font);
+    font-size: 12px;
+    font-weight: 300;
+    line-height: 1.5;
+    color: var(--lum-text-primary);
+    outline: none;
+    transition: var(--lum-transition);
+    box-sizing: border-box;
+}
+
+.lum-settings-textarea:focus {
+    border-color: rgba(245, 194, 122, 0.2);
+    box-shadow: 0 0 16px rgba(245, 194, 122, 0.05);
+}
+
+/* ---- INJECT SETTINGS (depth, position) ---- */
+
+.lum-inject-settings {
+    display: flex;
+    gap: 8px;
+}
+
+.lum-inject-settings .lum-settings-group {
+    flex: 1;
+}
+
+.lum-select {
+    width: 100%;
+    background: var(--lum-deep);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--lum-radius-sm);
+    padding: 8px 10px;
+    font-family: var(--lum-mono);
+    font-size: 11px;
+    color: var(--lum-text-primary);
+    outline: none;
+    cursor: pointer;
+    transition: var(--lum-transition);
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.lum-select:focus {
+    border-color: rgba(245, 194, 122, 0.2);
+}
+
+.lum-select option {
+    background: var(--lum-surface);
+    color: var(--lum-text-primary);
+}
+
+/* ---- DIVIDER ---- */
+
+.lum-divider {
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.04) 20%,
+        rgba(255, 255, 255, 0.04) 80%,
+        transparent
+    );
+    margin: 4px 0;
+}
+
+/* ---- TOGGLE BUTTON (in SillyTavern header) ---- */
+
+#lumina-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+}
+
+#lumina-toggle svg {
+    width: 20px;
+    height: 20px;
+    color: var(--lum-text-muted, #8e8a83);
+    transition: var(--lum-transition);
+    filter: drop-shadow(0 0 0px transparent);
+}
+
+#lumina-toggle:hover svg,
+#lumina-toggle.active svg {
+    color: var(--lum-mint, #7DF9C1);
+    filter: drop-shadow(0 0 6px rgba(125, 249, 193, 0.4));
+}
+
+/* ---- MOBILE HANDLE ---- */
+
+.lum-mobile-handle {
+    display: none;
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--lum-subtle);
+    margin: 10px auto 4px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .lum-mobile-handle {
+        display: block;
+    }
+}
+
+/* ---- HISTORY CHIPS ---- */
+
+.lum-history {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.lum-chip {
+    padding: 4px 10px;
+    background: var(--lum-elevated);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--lum-text-secondary);
+    cursor: pointer;
+    transition: var(--lum-transition);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lum-chip:hover {
+    border-color: rgba(125, 249, 193, 0.15);
+    color: var(--lum-mint);
+    background: var(--lum-mint-glow);
+}
+
+/* ---- SECTION TOGGLE ---- */
+
+.lum-section-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-family: var(--lum-mono);
+    font-size: 10px;
+    color: var(--lum-text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: var(--lum-transition);
+}
+
+.lum-section-toggle:hover {
+    color: var(--lum-text-secondary);
+}
+
+.lum-section-toggle svg {
+    width: 10px;
+    height: 10px;
+    transition: transform 0.2s ease;
+}
+
+.lum-section-toggle.open svg {
+    transform: rotate(90deg);
+}
+
+.lum-section-content {
+    display: none;
+}
+
+.lum-section-content.open {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: lum-fade-up 0.25s ease-out;
+}
+
+/* ---- RESPONSIVE ADJUSTMENTS ---- */
+
+@media (max-width: 768px) {
+    .lum-header {
+        padding: 12px 16px 10px;
+    }
+
+    .lum-body {
+        padding: 12px 16px 16px;
+    }
+
+    .lum-search-textarea {
+        min-height: 64px;
+        font-size: 14px;
+    }
+
+    .lum-result-content {
+        max-height: 220px;
+        font-size: 13.5px;
+    }
+
+    .lum-actions {
+        flex-wrap: wrap;
+    }
+
+    .lum-action-btn {
+        font-size: 11px;
+        padding: 9px 10px;
+    }
+}

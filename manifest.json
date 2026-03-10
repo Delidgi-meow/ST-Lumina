@@ -1,0 +1,12 @@
+{
+    "display_name": "Lumina Search",
+    "loading_order": 100,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "Delidgi",
+    "version": "1.0.0",
+    "homePage": "https://github.com/Delidgi-meow/ST-Lumina",
+    "auto_update": false
+}
