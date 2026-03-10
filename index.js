@@ -384,119 +384,71 @@ const FAB_HTML = `<div id="lumina-fab" title="Lumina Search">${ICONS.lumina}</di
 // ---- DRAG LOGIC (robust mobile + desktop) ----
 
 function setupDrag($fab, onTap) {
-    let isFabDragging = false;
-    let fabMoved = false;
-    let fabOffset = { x: 0, y: 0 };
-    let pendingTap = false;
+    let isMiniDragging = false;
+    let miniMoved = false;
+    let miniClickAllowed = true;
+    let miniOffset = { x: 0, y: 0 };
 
-    function getCoords(ev) {
+    function getCoords(e) {
+        const ev = e.originalEvent || e;
         if (ev.touches && ev.touches[0]) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
-        if (ev.changedTouches && ev.changedTouches[0]) return { x: ev.changedTouches[0].clientX, y: ev.changedTouches[0].clientY };
         return { x: ev.clientX, y: ev.clientY };
     }
 
-    // Drag start
-    $fab[0].addEventListener('touchstart', function(e) {
-        isFabDragging = true;
-        fabMoved = false;
-        pendingTap = true;
-        const pos = { left: $fab[0].offsetLeft, top: $fab[0].offsetTop };
-        const coords = getCoords(e);
-        fabOffset = { x: coords.x - pos.left, y: coords.y - pos.top };
-    }, { passive: true });
-
-    $fab[0].addEventListener('mousedown', function(e) {
-        isFabDragging = true;
-        fabMoved = false;
-        pendingTap = false; // mouse uses click event instead
-        const pos = { left: $fab[0].offsetLeft, top: $fab[0].offsetTop };
-        fabOffset = { x: e.clientX - pos.left, y: e.clientY - pos.top };
-    });
-
-    // Drag move
-    document.addEventListener('touchmove', function(e) {
-        if (!isFabDragging) return;
-        const coords = getCoords(e);
-        const dx = coords.x - fabOffset.x - $fab[0].offsetLeft;
-        const dy = coords.y - fabOffset.y - $fab[0].offsetTop;
-        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
-            fabMoved = true;
-            pendingTap = false;
-        }
-        if (!fabMoved) return;
-        const w = $fab[0].offsetWidth, h = $fab[0].offsetHeight;
-        const nx = Math.max(0, Math.min(coords.x - fabOffset.x, window.innerWidth - w));
-        const ny = Math.max(0, Math.min(coords.y - fabOffset.y, window.innerHeight - h));
-        $fab.css({ top: ny + 'px', left: nx + 'px', right: 'auto', bottom: 'auto' });
-    }, { passive: true });
-
-    document.addEventListener('mousemove', function(e) {
-        if (!isFabDragging) return;
-        fabMoved = true;
-        const w = $fab[0].offsetWidth, h = $fab[0].offsetHeight;
-        const nx = Math.max(0, Math.min(e.clientX - fabOffset.x, window.innerWidth - w));
-        const ny = Math.max(0, Math.min(e.clientY - fabOffset.y, window.innerHeight - h));
-        $fab.css({ top: ny + 'px', left: nx + 'px', right: 'auto', bottom: 'auto' });
-    });
-
-    // Touch end — tap or drag end
-    $fab[0].addEventListener('touchend', function(e) {
-        if (!isFabDragging) return;
-        isFabDragging = false;
-        if (pendingTap && !fabMoved) {
-            // Это был тап — открываем панель
-            e.preventDefault();
-            pendingTap = false;
-            onTap();
-        } else {
-            // Было перетаскивание — сохраняем позицию
-            pendingTap = false;
-            const rect = $fab[0].getBoundingClientRect();
-            saveSetting('fab_x', Math.round(rect.left));
-            saveSetting('fab_y', Math.round(rect.top));
-        }
-    }, { passive: false });
-
-    // Mouse end
-    document.addEventListener('mouseup', function() {
-        if (!isFabDragging) return;
-        isFabDragging = false;
-        if (fabMoved) {
-            const rect = $fab[0].getBoundingClientRect();
-            saveSetting('fab_x', Math.round(rect.left));
-            saveSetting('fab_y', Math.round(rect.top));
-        }
-    });
-
-    // Desktop click (mouse only, not touch)
-    $fab[0].addEventListener('click', function(e) {
-        if (fabMoved) { fabMoved = false; return; }
+    // Тап — открыть/закрыть панель
+    $fab.on('click touchend', function(e) {
+        if (!miniClickAllowed) return;
+        e.preventDefault();
+        e.stopPropagation();
         onTap();
     });
 
-    // Restore position — сбрасываем сохранённые координаты если они не влезают на текущий экран
+    // Начало перетаскивания
+    $fab.on('mousedown touchstart', function(e) {
+        isMiniDragging = true;
+        miniMoved = false;
+        miniClickAllowed = true;
+        const pos = $fab.position();
+        $fab.css({ top: pos.top + 'px', left: pos.left + 'px', right: 'auto', bottom: 'auto' });
+        const coords = getCoords(e);
+        miniOffset = { x: coords.x - pos.left, y: coords.y - pos.top };
+        e.stopPropagation();
+    });
+
+    // Движение
+    $(document).on('mousemove.lumfab touchmove.lumfab', function(e) {
+        if (!isMiniDragging) return;
+        miniMoved = true;
+        miniClickAllowed = false;
+        const coords = getCoords(e);
+        const w = $fab.outerWidth(), h = $fab.outerHeight();
+        const nx = Math.max(0, Math.min(coords.x - miniOffset.x, window.innerWidth - w));
+        const ny = Math.max(0, Math.min(coords.y - miniOffset.y, window.innerHeight - h));
+        $fab.css({ top: ny + 'px', left: nx + 'px' });
+        e.preventDefault();
+    });
+
+    // Конец перетаскивания
+    $(document).on('mouseup.lumfab touchend.lumfab', function() {
+        if (!isMiniDragging) return;
+        isMiniDragging = false;
+        if (miniMoved) {
+            const rect = $fab[0].getBoundingClientRect();
+            saveSetting('fab_x', Math.round(rect.left));
+            saveSetting('fab_y', Math.round(rect.top));
+            setTimeout(() => { miniClickAllowed = true; }, 50);
+        }
+    });
+
+    // Восстановление позиции
     const s = loadSettings();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const fabSize = 48;
-    if (s.fab_x >= 0 && s.fab_y >= 0 && s.fab_x < vw && s.fab_y < vh) {
-        const safeX = Math.max(0, Math.min(s.fab_x, vw - fabSize));
-        const safeY = Math.max(0, Math.min(s.fab_y, vh - fabSize));
-        $fab.css({ left: safeX + 'px', top: safeY + 'px', right: 'auto', bottom: 'auto' });
+    if (s.fab_x >= 0 && s.fab_y >= 0 && s.fab_x < vw - 10 && s.fab_y < vh - 10) {
+        $fab.css({ left: s.fab_x + 'px', top: s.fab_y + 'px', right: 'auto', bottom: 'auto' });
     } else {
-        // Координаты невалидны или не для этого экрана — сброс в дефолт
         $fab.css({ top: '120px', right: '15px', left: 'auto', bottom: 'auto' });
-        saveSetting('fab_x', -1);
-        saveSetting('fab_y', -1);
     }
-
-    // Keep on screen after resize
-    $(window).on('resize', function() {
-        const rect = $fab[0].getBoundingClientRect();
-        const w = $fab.outerWidth(), h = $fab.outerHeight();
-        if (rect.right > window.innerWidth) $fab.css({ left: (window.innerWidth - w - 15) + 'px', right: 'auto' });
-        if (rect.bottom > window.innerHeight) $fab.css('top', (window.innerHeight - h - 15) + 'px');
-    });
 }
 
 // ============================================================
