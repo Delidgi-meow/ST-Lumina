@@ -379,107 +379,109 @@ function buildPanelHTML() {
 
 // ---- FAB ----
 
-function buildFAB() {
-    const fab = document.createElement('div');
-    fab.id = 'lumina-fab';
-    fab.title = 'Lumina Search';
-    fab.innerHTML = ICONS.lumina;
+// FAB is now injected as HTML string via jQuery in init
+const FAB_HTML = `<div id="lumina-fab" title="Lumina Search">${ICONS.lumina}</div>`;
 
-    // Restore saved position
-    const s = loadSettings();
-    if (s.fab_x >= 0 && s.fab_y >= 0) {
-        fab.style.left = `${Math.min(s.fab_x, window.innerWidth - 40)}px`;
-        fab.style.top = `${Math.min(s.fab_y, window.innerHeight - 40)}px`;
-        fab.style.right = 'auto';
-        fab.style.bottom = 'auto';
+// ---- DRAG LOGIC (robust mobile + desktop) ----
+
+function setupDrag($fab, onTap) {
+    let dragging = false;
+    let moved = false;
+    let startX = 0, startY = 0, fabStartX = 0, fabStartY = 0;
+
+    function xy(e) {
+        const ev = e.originalEvent || e;
+        if (ev.touches?.[0]) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+        if (ev.changedTouches?.[0]) return { x: ev.changedTouches[0].clientX, y: ev.changedTouches[0].clientY };
+        return { x: ev.clientX, y: ev.clientY };
     }
 
-    return fab;
-}
-
-// ---- DRAG LOGIC (touch + mouse) ----
-
-function makeDraggable(fab, onTap) {
-    let startX, startY, fabX, fabY, dragging = false, moved = false;
-
-    function onStart(clientX, clientY) {
+    // Drag start
+    $fab.on('mousedown touchstart', function(e) {
         dragging = true;
         moved = false;
-        const rect = fab.getBoundingClientRect();
-        fabX = rect.left;
-        fabY = rect.top;
-        startX = clientX;
-        startY = clientY;
-        fab.style.transition = 'none';
-        fab.style.cursor = 'grabbing';
-    }
+        const c = xy(e);
+        startX = c.x;
+        startY = c.y;
+        const rect = $fab[0].getBoundingClientRect();
+        fabStartX = rect.left;
+        fabStartY = rect.top;
+        $fab.css('transition', 'none');
+        // Do NOT preventDefault here — allows click event to fire for taps
+    });
 
-    function onMove(clientX, clientY) {
+    // Drag move
+    $(document).on('mousemove touchmove', function(e) {
         if (!dragging) return;
-        const dx = clientX - startX;
-        const dy = clientY - startY;
-        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+        const c = xy(e);
+        const dx = c.x - startX;
+        const dy = c.y - startY;
+
+        if (!moved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+            moved = true;
+        }
         if (!moved) return;
 
-        let newX = fabX + dx;
-        let newY = fabY + dy;
+        e.preventDefault(); // block scroll only during actual drag
 
-        // Clamp to viewport
-        const w = fab.offsetWidth;
-        const h = fab.offsetHeight;
-        newX = Math.max(0, Math.min(newX, window.innerWidth - w));
-        newY = Math.max(0, Math.min(newY, window.innerHeight - h));
+        const w = $fab.outerWidth(), h = $fab.outerHeight();
+        const nx = Math.max(0, Math.min(fabStartX + dx, window.innerWidth - w));
+        const ny = Math.max(0, Math.min(fabStartY + dy, window.innerHeight - h));
+        $fab.css({ position: 'fixed', top: ny + 'px', left: nx + 'px', right: 'auto', bottom: 'auto' });
+    });
 
-        fab.style.left = `${newX}px`;
-        fab.style.top = `${newY}px`;
-        fab.style.right = 'auto';
-        fab.style.bottom = 'auto';
-    }
-
-    function onEnd() {
+    // Drag end
+    $(document).on('mouseup touchend touchcancel', function() {
         if (!dragging) return;
         dragging = false;
-        fab.style.transition = '';
-        fab.style.cursor = '';
+        $fab.css('transition', '');
 
         if (moved) {
-            // Save position
-            const rect = fab.getBoundingClientRect();
+            const rect = $fab[0].getBoundingClientRect();
             saveSetting('fab_x', Math.round(rect.left));
             saveSetting('fab_y', Math.round(rect.top));
-        } else {
-            onTap();
         }
+    });
+
+    // Tap (click fires on mouse AND touch after touchend on most browsers)
+    $fab.on('click', function(e) {
+        if (moved) { moved = false; return; } // was a drag, skip
+        e.preventDefault();
+        e.stopPropagation();
+        onTap();
+    });
+
+    // Fallback: some mobile browsers don't fire click after touch
+    let lastTouchEnd = 0;
+    $fab.on('touchend', function(e) {
+        if (moved) { moved = false; return; }
+        // Debounce: skip if click will fire within 300ms
+        lastTouchEnd = Date.now();
+        setTimeout(() => {
+            // Only fire if click didn't already handle it
+            if (Date.now() - lastTouchEnd >= 280) return;
+            e.preventDefault();
+            e.stopPropagation();
+            onTap();
+        }, 300);
+    });
+
+    // Restore position
+    const s = loadSettings();
+    if (s.fab_x >= 0 && s.fab_y >= 0) {
+        $fab.css({
+            left: Math.min(s.fab_x, window.innerWidth - 44) + 'px',
+            top: Math.min(s.fab_y, window.innerHeight - 44) + 'px',
+            right: 'auto', bottom: 'auto',
+        });
     }
 
-    // Mouse
-    fab.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        onStart(e.clientX, e.clientY);
-    });
-    document.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
-    document.addEventListener('mouseup', () => onEnd());
-
-    // Touch
-    fab.addEventListener('touchstart', (e) => {
-        const t = e.touches[0];
-        onStart(t.clientX, t.clientY);
-    }, { passive: true });
-    document.addEventListener('touchmove', (e) => {
-        if (!dragging) return;
-        const t = e.touches[0];
-        onMove(t.clientX, t.clientY);
-        if (moved) e.preventDefault();
-    }, { passive: false });
-    document.addEventListener('touchend', () => onEnd());
-
-    // Reposition on resize
-    window.addEventListener('resize', () => {
-        const rect = fab.getBoundingClientRect();
-        const w = fab.offsetWidth, h = fab.offsetHeight;
-        const maxX = window.innerWidth - w, maxY = window.innerHeight - h;
-        if (rect.left > maxX) fab.style.left = `${maxX}px`;
-        if (rect.top > maxY) fab.style.top = `${maxY}px`;
+    // Keep on screen after resize
+    $(window).on('resize', function() {
+        const rect = $fab[0].getBoundingClientRect();
+        const w = $fab.outerWidth(), h = $fab.outerHeight();
+        if (rect.left + w > window.innerWidth) $fab.css('left', (window.innerWidth - w) + 'px');
+        if (rect.top + h > window.innerHeight) $fab.css('top', (window.innerHeight - h) + 'px');
     });
 }
 
@@ -626,14 +628,12 @@ function updateContextIndicator() {
 jQuery(async () => {
     loadSettings();
 
-    // Inject panel
-    const wrap = document.createElement('div');
-    wrap.innerHTML = buildPanelHTML();
-    document.body.appendChild(wrap.firstElementChild);
+    // Inject panel + FAB via jQuery (critical for ST mobile compatibility)
+    $('body').append(buildPanelHTML());
+    $('body').append(FAB_HTML);
 
-    // Inject FAB
-    const fab = buildFAB();
-    document.body.appendChild(fab);
+    const $fab = $('#lumina-fab');
+    const fab = $fab[0];
 
     // Elements
     const panel = document.getElementById('lumina-panel');
@@ -660,15 +660,20 @@ jQuery(async () => {
     function togglePanel() {
         panelOpen = !panelOpen;
         panel.classList.toggle('lum-visible', panelOpen);
-        fab.classList.toggle('lum-fab-active', panelOpen);
+        $fab.toggleClass('lum-fab-active', panelOpen);
         if (panelOpen) {
             queryInput?.focus();
             updateContextIndicator();
         }
     }
 
-    makeDraggable(fab, togglePanel);
-    closeBtn.addEventListener('click', togglePanel);
+    setupDrag($fab, togglePanel);
+
+    // Close button
+    $(closeBtn).on('click touchend', function(e) {
+        e.preventDefault();
+        if (panelOpen) togglePanel();
+    });
 
     // Close on Escape key
     document.addEventListener('keydown', (e) => {
