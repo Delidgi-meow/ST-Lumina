@@ -105,7 +105,6 @@
 
 #lumina-panel.lum-visible {
     display: flex;
-    animation: lum-panel-in 0.3s ease-out;
 }
 
 /* Desktop: side panel */
@@ -121,10 +120,14 @@
             -20px 0 60px rgba(0, 0, 0, 0.5),
             -4px 0 20px rgba(125, 249, 193, 0.03);
     }
-    @keyframes lum-panel-in {
-        from { opacity: 0; transform: translateX(20px); }
-        to { opacity: 1; transform: translateX(0); }
+    #lumina-panel.lum-visible {
+        animation: lum-panel-in-desktop 0.3s ease-out;
     }
+}
+
+@keyframes lum-panel-in-desktop {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
 /* Mobile: bottom sheet */
@@ -139,10 +142,14 @@
         border-radius: var(--lum-radius-lg) var(--lum-radius-lg) 0 0;
         box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.6);
     }
-    @keyframes lum-panel-in {
-        from { opacity: 0; transform: translateY(30px); }
-        to { opacity: 1; transform: translateY(0); }
+    #lumina-panel.lum-visible {
+        animation: lum-panel-in-mobile 0.3s ease-out;
     }
+}
+
+@keyframes lum-panel-in-mobile {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Mobile handle */
