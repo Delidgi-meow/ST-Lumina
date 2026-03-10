@@ -1,8 +1,3 @@
-// ============================================
-//  LUMINA SEARCH — SillyTavern Extension
-//  Context-aware AI search + prompt injection
-// ============================================
-
 import { extension_settings, getContext } from '../../../extensions.js';
 import { saveSettingsDebounced } from '../../../../script.js';
 import { SlashCommandParser } from '../../../slash-commands/SlashCommandParser.js';
@@ -75,9 +70,9 @@ function saveSetting(key, value) {
     saveSettingsDebounced();
 }
 
-// ============================================================
-//  CONTEXT GATHERING — reads character card + chat history
-// ============================================================
+// 
+//  Для контента, тут захват инфы из чата и карт
+// 
 
 function gatherContext() {
     const ctx = getContext();
@@ -163,9 +158,6 @@ function gatherContext() {
     return parts.join('\n\n');
 }
 
-// ============================================================
-//  FETCH MODELS
-// ============================================================
 
 async function fetchModels() {
     const s = loadSettings();
@@ -217,9 +209,9 @@ function escapeAttr(str) {
     return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// ============================================================
-//  BUILD HTML
-// ============================================================
+// 
+//  хтмлька
+// 
 
 function buildPanelHTML() {
     const s = loadSettings();
@@ -425,7 +417,7 @@ function setupDrag($fab, onTap) {
         $fab.css({ left: nx + 'px', top: ny + 'px' });
     }, { passive: true });
 
-    // touchend на элементе — здесь решаем: тап или drag
+    // touchend на элементе - здесь решаем: тап или drag
     fabEl.addEventListener('touchend', function(e) {
         if (!dragging) return;
         dragging = false;
@@ -489,10 +481,6 @@ function setupDrag($fab, onTap) {
         $fab.css({ top: '120px', right: '15px', left: 'auto', bottom: 'auto' });
     }
 }
-
-// ============================================================
-//  API CALL — now includes gathered context
-// ============================================================
 
 async function queryLuminaAPI(query) {
     const s = loadSettings();
@@ -626,14 +614,14 @@ function updateContextIndicator() {
     }
 }
 
-// ============================================================
-//  INIT
-// ============================================================
+// 
+//  юнит
+// 
 
 jQuery(async () => {
     loadSettings();
 
-    // Inject panel + FAB via jQuery (critical for ST mobile compatibility)
+    // Inject panel + FAB via jQuery
     $('body').append(buildPanelHTML());
     $('body').append(FAB_HTML);
 
