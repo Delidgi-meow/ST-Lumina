@@ -412,8 +412,7 @@ function setupDrag($fab, onTap) {
         $fab.css({ top: pos.top + 'px', left: pos.left + 'px', right: 'auto', bottom: 'auto' });
         const coords = getCoords(e.originalEvent || e);
         fabOffset = { x: coords.x - pos.left, y: coords.y - pos.top };
-        e.preventDefault();
-        e.stopPropagation();
+        // НЕ делаем preventDefault — иначе touchend не сработает на мобиле
     });
 
     // Drag move
