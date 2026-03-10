@@ -640,7 +640,9 @@ jQuery(async () => {
         panel.classList.toggle('lum-visible', panelOpen);
         $fab.toggleClass('lum-fab-active', panelOpen);
         if (panelOpen) {
-            queryInput?.focus();
+            // На мобиле не фокусируем автоматически — иначе вылезает клавиатура
+            const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window);
+            if (!isMobile) queryInput?.focus();
             updateContextIndicator();
         }
     }
