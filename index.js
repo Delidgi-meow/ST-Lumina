@@ -474,22 +474,28 @@ function setupDrag($fab, onTap) {
         onTap();
     });
 
-    // Restore position
+    // Restore position — сбрасываем сохранённые координаты если они не влезают на текущий экран
     const s = loadSettings();
-    if (s.fab_x >= 0 && s.fab_y >= 0) {
-        $fab.css({
-            left: Math.min(s.fab_x, window.innerWidth - 44) + 'px',
-            top: Math.min(s.fab_y, window.innerHeight - 44) + 'px',
-            right: 'auto', bottom: 'auto',
-        });
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const fabSize = 48;
+    if (s.fab_x >= 0 && s.fab_y >= 0 && s.fab_x < vw && s.fab_y < vh) {
+        const safeX = Math.max(0, Math.min(s.fab_x, vw - fabSize));
+        const safeY = Math.max(0, Math.min(s.fab_y, vh - fabSize));
+        $fab.css({ left: safeX + 'px', top: safeY + 'px', right: 'auto', bottom: 'auto' });
+    } else {
+        // Координаты невалидны или не для этого экрана — сброс в дефолт
+        $fab.css({ top: '120px', right: '15px', left: 'auto', bottom: 'auto' });
+        saveSetting('fab_x', -1);
+        saveSetting('fab_y', -1);
     }
 
     // Keep on screen after resize
     $(window).on('resize', function() {
         const rect = $fab[0].getBoundingClientRect();
         const w = $fab.outerWidth(), h = $fab.outerHeight();
-        if (rect.left + w > window.innerWidth) $fab.css('left', (window.innerWidth - w) + 'px');
-        if (rect.top + h > window.innerHeight) $fab.css('top', (window.innerHeight - h) + 'px');
+        if (rect.right > window.innerWidth) $fab.css({ left: (window.innerWidth - w - 15) + 'px', right: 'auto' });
+        if (rect.bottom > window.innerHeight) $fab.css('top', (window.innerHeight - h - 15) + 'px');
     });
 }
 
