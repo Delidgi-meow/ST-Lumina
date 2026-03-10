@@ -1,7 +1,6 @@
 // ============================================
 //  LUMINA SEARCH — SillyTavern Extension
-//  Creative AI search + prompt injection
-//  WITH full chat/character context awareness
+//  Context-aware AI search + prompt injection
 // ============================================
 
 import { extension_settings, getContext } from '../../../extensions.js';
@@ -14,16 +13,16 @@ const DEFAULT_SETTINGS = {
     api_url: 'http://127.0.0.1:5001/v1',
     api_key: '',
     model: '',
-    system_prompt: 'You are a creative writing assistant embedded in a roleplay environment. You have access to the current character card, scenario, and recent chat history. Answer concisely and in the language of the user query. Provide specific, actionable ideas for this particular roleplay — not generic advice. Reference character names, established dynamics, and ongoing plot threads.',
+    system_prompt: 'You are a creative writing assistant helping with roleplay. Answer concisely and in the language of the user query. Use the provided character and chat context to give specific, relevant, actionable ideas. Be vivid and imaginative. Never break character context.',
     inject_position: 'after',
     inject_depth: 1,
     max_tokens: 600,
     temperature: 0.85,
-    context_messages: 20,
-    include_char: true,
-    include_scenario: true,
-    include_chat: true,
+    context_messages: 15,
+    include_card: true,
     history: [],
+    fab_x: -1,
+    fab_y: -1,
 };
 
 // ---- SVG ICONS ----
@@ -34,13 +33,30 @@ const ICONS = {
         <path d="M12 2v3m0 14v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M2 12h3m14 0h3M4.22 19.78l2.12-2.12m11.32-11.32l2.12-2.12"/>
         <circle cx="12" cy="12" r="8" opacity="0.2" stroke-dasharray="2 3"/>
     </svg>`,
-    search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
-    inject: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`,
-    copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`,
-    clear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`,
-    close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`,
-    settings: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>`,
-    refresh: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0115.36-6.36L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 01-15.36 6.36L3 16"/></svg>`,
+    search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>`,
+    inject: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12h14"/>
+    </svg>`,
+    copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2"/>
+        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+    </svg>`,
+    clear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M18 6L6 18M6 6l12 12"/>
+    </svg>`,
+    close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M18 6L6 18M6 6l12 12"/>
+    </svg>`,
+    settings: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+    </svg>`,
+    refresh: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0115.36-6.36L21 8"/>
+        <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 01-15.36 6.36L3 16"/>
+    </svg>`,
 };
 
 // ---- SETTINGS ----
@@ -69,76 +85,88 @@ function gatherContext() {
     const s = loadSettings();
     const parts = [];
 
-    // ---- Character card data ----
-    if (s.include_char && ctx.characters && ctx.characterId !== undefined) {
-        const char = ctx.characters[ctx.characterId];
-        if (char) {
-            const charParts = [];
-            if (char.name) charParts.push(`Name: ${char.name}`);
-            if (char.description) charParts.push(`Description: ${char.description}`);
-            if (char.personality) charParts.push(`Personality: ${char.personality}`);
-            if (char.mes_example) charParts.push(`Example dialogue:\n${char.mes_example}`);
-            if (charParts.length) {
-                parts.push(`=== CHARACTER CARD ===\n${charParts.join('\n')}`);
-            }
-        }
-    }
+    // ---- Character card info ----
+    if (s.include_card) {
+        const charName = ctx.name2 || '';
+        const userName = ctx.name1 || 'User';
 
-    // ---- Scenario / first message ----
-    if (s.include_scenario && ctx.characters && ctx.characterId !== undefined) {
-        const char = ctx.characters[ctx.characterId];
-        if (char) {
-            const scenParts = [];
-            if (char.scenario) scenParts.push(`Scenario: ${char.scenario}`);
-            if (char.first_mes) scenParts.push(`First message: ${char.first_mes}`);
-            if (scenParts.length) {
-                parts.push(`=== SCENARIO ===\n${scenParts.join('\n')}`);
-            }
+        if (charName) {
+            parts.push(`[CHARACTER: ${charName}]`);
+        }
+
+        // Description
+        const description = ctx.characters?.[ctx.characterId]?.description
+            || ctx.characterData?.description
+            || '';
+        if (description) {
+            parts.push(`[DESCRIPTION]\n${description.trim()}`);
+        }
+
+        // Personality
+        const personality = ctx.characters?.[ctx.characterId]?.personality
+            || ctx.characterData?.personality
+            || '';
+        if (personality) {
+            parts.push(`[PERSONALITY]\n${personality.trim()}`);
+        }
+
+        // Scenario
+        const scenario = ctx.characters?.[ctx.characterId]?.scenario
+            || ctx.characterData?.scenario
+            || '';
+        if (scenario) {
+            parts.push(`[SCENARIO]\n${scenario.trim()}`);
+        }
+
+        // Mes_example (example messages) — can be useful for tone
+        const mesExample = ctx.characters?.[ctx.characterId]?.mes_example
+            || ctx.characterData?.mes_example
+            || '';
+        if (mesExample && mesExample.trim().length > 0) {
+            // Trim to first 500 chars to not blow up context
+            parts.push(`[EXAMPLE DIALOGUE]\n${mesExample.trim().slice(0, 500)}`);
+        }
+
+        if (userName) {
+            parts.push(`[USER PERSONA: ${userName}]`);
+        }
+
+        // User persona description
+        const personaDescription = ctx.persona?.description || '';
+        if (personaDescription) {
+            parts.push(`[USER DESCRIPTION]\n${personaDescription.trim()}`);
         }
     }
 
     // ---- Chat history (last N messages) ----
-    if (s.include_chat && ctx.chat && ctx.chat.length > 0) {
-        const limit = Number(s.context_messages) || 20;
-        const recent = ctx.chat.slice(-limit);
-        const formatted = recent.map(msg => {
-            const name = msg.is_user ? (ctx.name1 || 'User') : (msg.name || ctx.name2 || 'Character');
-            const text = (msg.mes || '').slice(0, 500); // cap per message
-            return `${name}: ${text}`;
-        }).join('\n');
+    const chat = ctx.chat || [];
+    const msgCount = Math.min(Number(s.context_messages) || 15, chat.length);
 
-        if (formatted) {
-            parts.push(`=== RECENT CHAT (last ${recent.length} messages) ===\n${formatted}`);
+    if (msgCount > 0) {
+        const recent = chat.slice(-msgCount);
+        const chatLines = [];
+
+        for (const msg of recent) {
+            if (msg.is_system) continue;
+            const name = msg.is_user ? (ctx.name1 || 'User') : (ctx.name2 || 'Character');
+            const text = (msg.mes || '').trim();
+            if (text) {
+                // Truncate individual messages to keep total context reasonable
+                chatLines.push(`${name}: ${text.slice(0, 400)}`);
+            }
         }
-    }
 
-    // ---- User persona ----
-    if (ctx.name1) {
-        parts.push(`=== USER PERSONA ===\nName: ${ctx.name1}`);
+        if (chatLines.length > 0) {
+            parts.push(`[RECENT CHAT]\n${chatLines.join('\n')}`);
+        }
     }
 
     return parts.join('\n\n');
 }
 
-// ---- CONTEXT STATS (shown in UI) ----
-
-function getContextStats() {
-    const ctx = getContext();
-    const stats = [];
-
-    if (ctx.characters && ctx.characterId !== undefined) {
-        const char = ctx.characters[ctx.characterId];
-        if (char?.name) stats.push(char.name);
-    }
-
-    if (ctx.chat) {
-        stats.push(`${ctx.chat.length} msgs`);
-    }
-
-    return stats.length ? stats.join(' / ') : 'no context';
-}
-
-// ---- FETCH MODELS ----
+// ============================================================
+//  FETCH MODELS
+// ============================================================
 
 async function fetchModels() {
     const s = loadSettings();
@@ -184,13 +212,15 @@ function populateModelSelect(models) {
 // ---- HELPERS ----
 
 function escapeHtml(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 function escapeAttr(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// ---- BUILD PANEL HTML ----
+// ============================================================
+//  BUILD HTML
+// ============================================================
 
 function buildPanelHTML() {
     const s = loadSettings();
@@ -203,25 +233,17 @@ function buildPanelHTML() {
                 <div class="lum-logo-text"><span>Lumina</span> Search</div>
             </div>
             <div class="lum-header-actions">
-                <button class="lum-icon-btn" id="lum-gear-btn" title="Toggle Settings">${ICONS.settings}</button>
+                <button class="lum-icon-btn" id="lum-gear-btn" title="Settings">${ICONS.settings}</button>
                 <button class="lum-icon-btn" id="lum-close" title="Close">${ICONS.close}</button>
             </div>
         </div>
 
         <div class="lum-body">
-
             <!-- ===== SEARCH VIEW ===== -->
             <div id="lum-search-section">
-
-                <!-- Context indicator -->
-                <div class="lum-context-bar" id="lum-context-bar">
-                    <div class="lum-context-dot"></div>
-                    <span id="lum-context-info">no context</span>
-                </div>
-
                 <div class="lum-search-wrap">
                     <textarea class="lum-search-textarea" id="lum-query"
-                        placeholder="What interests you? Setting, plot twist, character arc, mood..."
+                        placeholder="What interests you? Setting, plot twist, character arc..."
                         spellcheck="false"></textarea>
                     <div class="lum-search-controls">
                         <span class="lum-token-hint" id="lum-char-count">0 chars</span>
@@ -229,6 +251,12 @@ function buildPanelHTML() {
                             ${ICONS.search} <span>Generate</span>
                         </button>
                     </div>
+                </div>
+
+                <!-- Context indicator -->
+                <div class="lum-context-indicator" id="lum-ctx-indicator">
+                    <div class="lum-ctx-dot"></div>
+                    <span id="lum-ctx-label">No character loaded</span>
                 </div>
 
                 <div class="lum-history" id="lum-history"></div>
@@ -258,20 +286,22 @@ function buildPanelHTML() {
                 </div>
             </div>
 
-            <!-- ===== SETTINGS VIEW (hidden, gear toggles) ===== -->
+            <!-- ===== SETTINGS VIEW (toggled by gear) ===== -->
             <div class="lum-settings-panel" id="lum-settings-panel">
                 <div class="lum-settings">
 
                     <div class="lum-settings-group">
                         <label class="lum-settings-label">API URL</label>
                         <input class="lum-settings-input" id="lum-api-url" type="text"
-                            value="${escapeAttr(s.api_url)}" placeholder="http://127.0.0.1:5001/v1" />
+                            value="${escapeAttr(s.api_url)}"
+                            placeholder="http://127.0.0.1:5001/v1" />
                     </div>
 
                     <div class="lum-settings-group">
                         <label class="lum-settings-label">API Key</label>
                         <input class="lum-settings-input" id="lum-api-key" type="password"
-                            value="${escapeAttr(s.api_key)}" placeholder="sk-... (optional)" />
+                            value="${escapeAttr(s.api_key)}"
+                            placeholder="sk-... (optional)" />
                     </div>
 
                     <div class="lum-settings-group">
@@ -296,30 +326,21 @@ function buildPanelHTML() {
                     </div>
 
                     <div class="lum-divider"></div>
-                    <label class="lum-settings-label" style="margin-bottom:2px">Context Sources</label>
 
-                    <div class="lum-toggles-row">
-                        <label class="lum-toggle-label">
-                            <input type="checkbox" id="lum-inc-char" ${s.include_char ? 'checked' : ''} />
-                            <span>Character card</span>
-                        </label>
-                        <label class="lum-toggle-label">
-                            <input type="checkbox" id="lum-inc-scenario" ${s.include_scenario ? 'checked' : ''} />
-                            <span>Scenario</span>
-                        </label>
-                        <label class="lum-toggle-label">
-                            <input type="checkbox" id="lum-inc-chat" ${s.include_chat ? 'checked' : ''} />
-                            <span>Chat history</span>
-                        </label>
+                    <div class="lum-inject-settings">
+                        <div class="lum-settings-group">
+                            <label class="lum-settings-label">Context Messages</label>
+                            <input class="lum-settings-input" id="lum-context-messages" type="number"
+                                value="${s.context_messages}" min="0" max="50" style="width:100%" />
+                        </div>
+                        <div class="lum-settings-group">
+                            <label class="lum-settings-label">Include Card</label>
+                            <select class="lum-select" id="lum-include-card">
+                                <option value="true" ${s.include_card ? 'selected' : ''}>Yes</option>
+                                <option value="false" ${!s.include_card ? 'selected' : ''}>No</option>
+                            </select>
+                        </div>
                     </div>
-
-                    <div class="lum-settings-group">
-                        <label class="lum-settings-label">Chat messages to include</label>
-                        <input class="lum-settings-input" id="lum-context-msgs" type="number"
-                            value="${s.context_messages}" min="1" max="100" style="width:100%" />
-                    </div>
-
-                    <div class="lum-divider"></div>
 
                     <div class="lum-inject-settings">
                         <div class="lum-settings-group">
@@ -351,7 +372,6 @@ function buildPanelHTML() {
 
                 </div>
             </div>
-
         </div>
     </div>
     `;
@@ -364,7 +384,103 @@ function buildFAB() {
     fab.id = 'lumina-fab';
     fab.title = 'Lumina Search';
     fab.innerHTML = ICONS.lumina;
+
+    // Restore saved position
+    const s = loadSettings();
+    if (s.fab_x >= 0 && s.fab_y >= 0) {
+        fab.style.left = `${Math.min(s.fab_x, window.innerWidth - 40)}px`;
+        fab.style.top = `${Math.min(s.fab_y, window.innerHeight - 40)}px`;
+        fab.style.right = 'auto';
+        fab.style.bottom = 'auto';
+    }
+
     return fab;
+}
+
+// ---- DRAG LOGIC (touch + mouse) ----
+
+function makeDraggable(fab, onTap) {
+    let startX, startY, fabX, fabY, dragging = false, moved = false;
+
+    function onStart(clientX, clientY) {
+        dragging = true;
+        moved = false;
+        const rect = fab.getBoundingClientRect();
+        fabX = rect.left;
+        fabY = rect.top;
+        startX = clientX;
+        startY = clientY;
+        fab.style.transition = 'none';
+        fab.style.cursor = 'grabbing';
+    }
+
+    function onMove(clientX, clientY) {
+        if (!dragging) return;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+        if (!moved) return;
+
+        let newX = fabX + dx;
+        let newY = fabY + dy;
+
+        // Clamp to viewport
+        const w = fab.offsetWidth;
+        const h = fab.offsetHeight;
+        newX = Math.max(0, Math.min(newX, window.innerWidth - w));
+        newY = Math.max(0, Math.min(newY, window.innerHeight - h));
+
+        fab.style.left = `${newX}px`;
+        fab.style.top = `${newY}px`;
+        fab.style.right = 'auto';
+        fab.style.bottom = 'auto';
+    }
+
+    function onEnd() {
+        if (!dragging) return;
+        dragging = false;
+        fab.style.transition = '';
+        fab.style.cursor = '';
+
+        if (moved) {
+            // Save position
+            const rect = fab.getBoundingClientRect();
+            saveSetting('fab_x', Math.round(rect.left));
+            saveSetting('fab_y', Math.round(rect.top));
+        } else {
+            onTap();
+        }
+    }
+
+    // Mouse
+    fab.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        onStart(e.clientX, e.clientY);
+    });
+    document.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+    document.addEventListener('mouseup', () => onEnd());
+
+    // Touch
+    fab.addEventListener('touchstart', (e) => {
+        const t = e.touches[0];
+        onStart(t.clientX, t.clientY);
+    }, { passive: true });
+    document.addEventListener('touchmove', (e) => {
+        if (!dragging) return;
+        const t = e.touches[0];
+        onMove(t.clientX, t.clientY);
+        if (moved) e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('touchend', () => onEnd());
+
+    // Reposition on resize
+    window.addEventListener('resize', () => {
+        const rect = fab.getBoundingClientRect();
+        const w = fab.offsetWidth, h = fab.offsetHeight;
+        const maxX = window.innerWidth - w, maxY = window.innerHeight - h;
+        if (rect.left > maxX) fab.style.left = `${maxX}px`;
+        if (rect.top > maxY) fab.style.top = `${maxY}px`;
+    });
 }
 
 // ============================================================
@@ -375,24 +491,21 @@ async function queryLuminaAPI(query) {
     const s = loadSettings();
     const url = s.api_url.replace(/\/+$/, '');
 
-    // Gather context from SillyTavern
-    const context = gatherContext();
+    // Gather context from ST
+    const contextBlock = gatherContext();
 
-    // Build messages: system (with context) + user query
-    const messages = [];
-
-    // System prompt
-    let systemContent = s.system_prompt;
-    if (context) {
-        systemContent += `\n\n--- CURRENT ROLEPLAY CONTEXT ---\n${context}\n--- END CONTEXT ---`;
+    // Build the user message: context + query
+    let userContent = '';
+    if (contextBlock) {
+        userContent += `=== CURRENT ROLEPLAY CONTEXT ===\n${contextBlock}\n=== END CONTEXT ===\n\n`;
     }
-    messages.push({ role: 'system', content: systemContent });
-
-    // User query
-    messages.push({ role: 'user', content: query });
+    userContent += `USER QUERY: ${query}`;
 
     const body = {
-        messages,
+        messages: [
+            { role: 'system', content: s.system_prompt },
+            { role: 'user', content: userContent },
+        ],
         max_tokens: Number(s.max_tokens) || 600,
         temperature: Number(s.temperature) || 0.85,
         stream: false,
@@ -403,7 +516,9 @@ async function queryLuminaAPI(query) {
     if (s.api_key) headers['Authorization'] = `Bearer ${s.api_key}`;
 
     const response = await fetch(`${url}/chat/completions`, {
-        method: 'POST', headers, body: JSON.stringify(body),
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -482,11 +597,26 @@ function renderHistory() {
     });
 }
 
-// ---- UPDATE CONTEXT BAR ----
+// ---- CONTEXT INDICATOR ----
 
-function updateContextBar() {
-    const info = document.getElementById('lum-context-info');
-    if (info) info.textContent = getContextStats();
+function updateContextIndicator() {
+    const label = document.getElementById('lum-ctx-label');
+    const dot = document.querySelector('.lum-ctx-dot');
+    if (!label || !dot) return;
+
+    const ctx = getContext();
+    const s = loadSettings();
+    const charName = ctx.name2 || '';
+    const chatLen = (ctx.chat || []).length;
+    const msgCount = Math.min(Number(s.context_messages) || 15, chatLen);
+
+    if (charName) {
+        label.textContent = `${charName} + ${msgCount} msgs`;
+        dot.classList.add('lum-ctx-active');
+    } else {
+        label.textContent = 'No character loaded';
+        dot.classList.remove('lum-ctx-active');
+    }
 }
 
 // ============================================================
@@ -524,7 +654,7 @@ jQuery(async () => {
     const modelSelect = document.getElementById('lum-model-select');
     const modelStatus = document.getElementById('lum-model-status');
 
-    // ---- FAB toggle ----
+    // ---- FAB: draggable + tap to toggle ----
     let panelOpen = false;
 
     function togglePanel() {
@@ -532,22 +662,20 @@ jQuery(async () => {
         panel.classList.toggle('lum-visible', panelOpen);
         fab.classList.toggle('lum-fab-active', panelOpen);
         if (panelOpen) {
-            updateContextBar();
             queryInput?.focus();
+            updateContextIndicator();
         }
     }
 
-    fab.addEventListener('click', (e) => { e.stopPropagation(); togglePanel(); });
+    makeDraggable(fab, togglePanel);
     closeBtn.addEventListener('click', togglePanel);
 
-    // Click outside to close
-    document.addEventListener('click', (e) => {
-        if (!panelOpen) return;
-        if (panel.contains(e.target) || fab.contains(e.target)) return;
-        togglePanel();
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && panelOpen) togglePanel();
     });
 
-    // ---- Gear: toggles search <-> settings view ----
+    // ---- Gear: switch between search and settings views ----
     let settingsVisible = false;
 
     gearBtn.addEventListener('click', () => {
@@ -577,7 +705,7 @@ jQuery(async () => {
             showToast(`${models.length} models loaded`, 'success');
         } catch (err) {
             console.error('[Lumina]', err);
-            modelStatus.textContent = 'failed';
+            modelStatus.textContent = 'connection failed';
             modelStatus.classList.add('lum-status-err');
             showToast(err.message, 'error');
         } finally {
@@ -592,7 +720,7 @@ jQuery(async () => {
         charCount.textContent = `${queryInput.value.length} chars`;
     });
 
-    // ---- Search (with context!) ----
+    // ---- Search ----
     let isGenerating = false;
 
     async function doSearch() {
@@ -647,7 +775,7 @@ jQuery(async () => {
         getContext().setExtensionPrompt(EXT_NAME, '', 0, 0);
     });
 
-    // ---- Settings auto-save ----
+    // ---- Auto-save settings ----
     const settingsMap = {
         'lum-api-url': 'api_url',
         'lum-api-key': 'api_key',
@@ -656,7 +784,7 @@ jQuery(async () => {
         'lum-inject-depth': 'inject_depth',
         'lum-max-tokens': 'max_tokens',
         'lum-temperature': 'temperature',
-        'lum-context-msgs': 'context_messages',
+        'lum-context-messages': 'context_messages',
     };
 
     for (const [elemId, settingKey] of Object.entries(settingsMap)) {
@@ -665,43 +793,33 @@ jQuery(async () => {
         const evt = elem.tagName === 'SELECT' ? 'change' : 'input';
         elem.addEventListener(evt, () => {
             let val = elem.value;
-            if (['inject_depth', 'max_tokens', 'context_messages'].includes(settingKey)) val = parseInt(val, 10) || 0;
-            else if (settingKey === 'temperature') val = parseFloat(val) || 0;
+            if (['inject_depth', 'max_tokens', 'context_messages'].includes(settingKey)) {
+                val = parseInt(val, 10) || 0;
+            } else if (settingKey === 'temperature') {
+                val = parseFloat(val) || 0;
+            }
             saveSetting(settingKey, val);
         });
     }
 
-    // Checkbox toggles for context sources
-    const checkboxMap = {
-        'lum-inc-char': 'include_char',
-        'lum-inc-scenario': 'include_scenario',
-        'lum-inc-chat': 'include_chat',
-    };
-
-    for (const [elemId, settingKey] of Object.entries(checkboxMap)) {
-        const elem = document.getElementById(elemId);
-        if (!elem) continue;
-        elem.addEventListener('change', () => {
-            saveSetting(settingKey, elem.checked);
+    // Include Card toggle
+    const includeCardElem = document.getElementById('lum-include-card');
+    if (includeCardElem) {
+        includeCardElem.addEventListener('change', () => {
+            saveSetting('include_card', includeCardElem.value === 'true');
         });
     }
 
-    // ---- Render history + context bar ----
     renderHistory();
-    updateContextBar();
+    updateContextIndicator();
 
-    // Update context bar when chat changes
-    const eventSource = window.eventSource || (await import('../../../../script.js')).eventSource;
+    // Update context indicator when chat changes
+    const eventSource = window?.eventSource || ctx?.eventSource;
     if (eventSource) {
-        const refreshCtx = () => updateContextBar();
         try {
-            eventSource.on('chatLoaded', refreshCtx);
-            eventSource.on('characterSelected', refreshCtx);
-            eventSource.on('messageReceived', refreshCtx);
-            eventSource.on('messageSent', refreshCtx);
-        } catch (e) {
-            console.warn('[Lumina] Event binding partial:', e);
-        }
+            eventSource.on('chatLoaded', () => updateContextIndicator());
+            eventSource.on('characterSelected', () => updateContextIndicator());
+        } catch (e) { /* not critical */ }
     }
 
     // ---- Slash command ----
@@ -713,10 +831,10 @@ jQuery(async () => {
                 try { return await queryLuminaAPI(query); }
                 catch (err) { return `Error: ${err.message}`; }
             },
-            helpString: 'Run a Lumina search query with current chat context.',
+            helpString: 'Run a context-aware Lumina search query.',
         }));
     } catch (e) {
-        console.warn('[Lumina] Slash command not registered:', e);
+        console.warn('[Lumina] Slash command:', e);
     }
 
     console.log('[Lumina Search] Extension loaded (context-aware)');
