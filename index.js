@@ -625,13 +625,24 @@ jQuery(async () => {
 
     function togglePanel() {
         panelOpen = !panelOpen;
+
+        // Принудительно задаём позицию через JS — CSS медиа-запросы ненадёжны в ST
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (isMobile) {
+            panel.style.top = 'auto';
+            panel.style.bottom = '0';
+            panel.style.left = '0';
+            panel.style.right = '0';
+            panel.style.width = '100%';
+            panel.style.height = 'auto';
+            panel.style.maxHeight = '80vh';
+            panel.style.borderRadius = '14px 14px 0 0';
+        }
+
         panel.classList.toggle('lum-visible', panelOpen);
         $fab.toggleClass('lum-fab-active', panelOpen);
-        if (panelOpen) {
-            const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window);
-            if (!isMobile) queryInput?.focus();
-            updateContextIndicator();
-        }
+        if (panelOpen && !isMobile) queryInput?.focus();
+        if (panelOpen) updateContextIndicator();
     }
 
     setupDrag($fab, togglePanel);
