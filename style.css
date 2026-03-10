@@ -1,33 +1,28 @@
+/* ============================================
+   LUMINA SEARCH — Ambient Glow UI
+   Bioluminescent / After-Dark 2026
+   ============================================ */
+
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-    /* Lumina Palette */
     --lum-void: #0c0c11;
     --lum-deep: #111117;
     --lum-surface: #17171f;
     --lum-elevated: #1e1e28;
     --lum-subtle: #2a2a36;
-
     --lum-text-primary: #e8e4df;
     --lum-text-secondary: #8e8a83;
     --lum-text-muted: #5a574f;
-
     --lum-mint: #7DF9C1;
     --lum-mint-dim: #4aad82;
     --lum-mint-glow: rgba(125, 249, 193, 0.12);
-    --lum-mint-glow-strong: rgba(125, 249, 193, 0.25);
-
     --lum-amber: #F5C27A;
     --lum-amber-dim: #b8914a;
     --lum-amber-glow: rgba(245, 194, 122, 0.12);
-    --lum-amber-glow-strong: rgba(245, 194, 122, 0.25);
-
     --lum-rose: #E8A0BF;
-    --lum-rose-glow: rgba(232, 160, 191, 0.1);
-
     --lum-danger: #F07070;
     --lum-danger-glow: rgba(240, 112, 112, 0.15);
-
     --lum-radius: 10px;
     --lum-radius-sm: 6px;
     --lum-radius-lg: 14px;
@@ -36,7 +31,83 @@
     --lum-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ---- PANEL CONTAINER ---- */
+/* ============================================
+   FLOATING ACTION BUTTON
+   ============================================ */
+
+#lumina-fab {
+    position: fixed;
+    z-index: 10000;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+    background: var(--lum-surface);
+    border: 1px solid rgba(125, 249, 193, 0.1);
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(125, 249, 193, 0.05);
+    transition: var(--lum-transition);
+    -webkit-tap-highlight-color: transparent;
+}
+
+#lumina-fab svg {
+    width: 24px;
+    height: 24px;
+    color: var(--lum-text-muted);
+    transition: var(--lum-transition);
+}
+
+#lumina-fab:hover {
+    border-color: rgba(125, 249, 193, 0.25);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(125, 249, 193, 0.1);
+    transform: scale(1.06);
+}
+
+#lumina-fab:hover svg,
+#lumina-fab.lum-fab-active svg {
+    color: var(--lum-mint);
+    filter: drop-shadow(0 0 8px rgba(125, 249, 193, 0.5));
+}
+
+#lumina-fab.lum-fab-active {
+    background: var(--lum-elevated);
+    border-color: rgba(125, 249, 193, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(125, 249, 193, 0.12);
+}
+
+/* Desktop */
+@media (min-width: 769px) {
+    #lumina-fab {
+        bottom: 24px;
+        right: 24px;
+        transition: right 0.35s ease, background 0.3s, border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+    }
+    #lumina-fab.lum-fab-active {
+        right: 392px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    #lumina-fab {
+        bottom: 80px;
+        right: 16px;
+        width: 52px;
+        height: 52px;
+    }
+    #lumina-fab svg {
+        width: 26px;
+        height: 26px;
+    }
+}
+
+/* ============================================
+   PANEL
+   ============================================ */
 
 #lumina-panel {
     position: fixed;
@@ -50,9 +121,10 @@
 
 #lumina-panel.lum-visible {
     display: flex;
+    animation: lum-panel-in 0.3s ease-out;
 }
 
-/* Desktop: side panel */
+/* Desktop: right side panel */
 @media (min-width: 769px) {
     #lumina-panel {
         top: 0;
@@ -61,9 +133,11 @@
         height: 100vh;
         background: var(--lum-void);
         border-left: 1px solid rgba(125, 249, 193, 0.06);
-        box-shadow:
-            -20px 0 60px rgba(0, 0, 0, 0.5),
-            -4px 0 20px rgba(125, 249, 193, 0.03);
+        box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5), -4px 0 20px rgba(125, 249, 193, 0.03);
+    }
+    @keyframes lum-panel-in {
+        from { opacity: 0; transform: translateX(20px); }
+        to { opacity: 1; transform: translateX(0); }
     }
 }
 
@@ -79,9 +153,29 @@
         border-radius: var(--lum-radius-lg) var(--lum-radius-lg) 0 0;
         box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.6);
     }
+    @keyframes lum-panel-in {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 }
 
-/* ---- HEADER ---- */
+.lum-mobile-handle {
+    display: none;
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--lum-subtle);
+    margin: 10px auto 4px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .lum-mobile-handle { display: block; }
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
 
 .lum-header {
     display: flex;
@@ -101,12 +195,12 @@
 .lum-logo-icon {
     width: 28px;
     height: 28px;
-    position: relative;
 }
 
 .lum-logo-icon svg {
     width: 100%;
     height: 100%;
+    color: var(--lum-mint);
     filter: drop-shadow(0 0 6px rgba(125, 249, 193, 0.4));
 }
 
@@ -118,9 +212,7 @@
     color: var(--lum-text-secondary);
 }
 
-.lum-logo-text span {
-    color: var(--lum-mint);
-}
+.lum-logo-text span { color: var(--lum-mint); }
 
 .lum-header-actions {
     display: flex;
@@ -148,12 +240,27 @@
     background: rgba(255, 255, 255, 0.04);
 }
 
-.lum-icon-btn svg {
-    width: 16px;
-    height: 16px;
+.lum-icon-btn svg { width: 16px; height: 16px; }
+
+/* Gear active */
+.lum-icon-btn.lum-gear-active {
+    color: var(--lum-amber);
+    background: var(--lum-amber-glow);
 }
 
-/* ---- BODY (scrollable) ---- */
+.lum-icon-btn.lum-gear-active svg {
+    filter: drop-shadow(0 0 6px rgba(245, 194, 122, 0.4));
+    animation: lum-gear-spin 0.4s ease-out;
+}
+
+@keyframes lum-gear-spin {
+    from { transform: rotate(0); }
+    to { transform: rotate(90deg); }
+}
+
+/* ============================================
+   BODY
+   ============================================ */
 
 .lum-body {
     flex: 1;
@@ -166,24 +273,42 @@
     scrollbar-color: var(--lum-subtle) transparent;
 }
 
-.lum-body::-webkit-scrollbar {
-    width: 4px;
+.lum-body::-webkit-scrollbar { width: 4px; }
+.lum-body::-webkit-scrollbar-track { background: transparent; }
+.lum-body::-webkit-scrollbar-thumb { background: var(--lum-subtle); border-radius: 2px; }
+
+/* ============================================
+   CONTEXT BAR (shows char name + msg count)
+   ============================================ */
+
+.lum-context-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(125, 249, 193, 0.04);
+    border: 1px solid rgba(125, 249, 193, 0.08);
+    border-radius: var(--lum-radius-sm);
+    font-family: var(--lum-mono);
+    font-size: 10px;
+    color: var(--lum-mint-dim);
+    letter-spacing: 0.06em;
 }
 
-.lum-body::-webkit-scrollbar-track {
-    background: transparent;
+.lum-context-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--lum-mint);
+    box-shadow: 0 0 6px rgba(125, 249, 193, 0.4);
+    flex-shrink: 0;
 }
 
-.lum-body::-webkit-scrollbar-thumb {
-    background: var(--lum-subtle);
-    border-radius: 2px;
-}
+/* ============================================
+   SEARCH INPUT
+   ============================================ */
 
-/* ---- SEARCH INPUT AREA ---- */
-
-.lum-search-wrap {
-    position: relative;
-}
+.lum-search-wrap { position: relative; }
 
 .lum-search-textarea {
     width: 100%;
@@ -193,8 +318,7 @@
     background: var(--lum-deep);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: var(--lum-radius);
-    padding: 14px 16px;
-    padding-bottom: 48px;
+    padding: 14px 16px 48px;
     font-family: var(--lum-font);
     font-size: 13.5px;
     font-weight: 300;
@@ -258,22 +382,13 @@
     box-shadow: 0 0 20px rgba(125, 249, 193, 0.1);
 }
 
-.lum-search-btn:active {
-    transform: scale(0.97);
-}
+.lum-search-btn:active { transform: scale(0.97); }
+.lum-search-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.lum-search-btn svg { width: 12px; height: 12px; }
 
-.lum-search-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    box-shadow: none;
-}
-
-.lum-search-btn svg {
-    width: 12px;
-    height: 12px;
-}
-
-/* ---- LOADING STATE ---- */
+/* ============================================
+   LOADING
+   ============================================ */
 
 .lum-loading {
     display: none;
@@ -287,9 +402,7 @@
     text-transform: uppercase;
 }
 
-.lum-loading.active {
-    display: flex;
-}
+.lum-loading.active { display: flex; }
 
 .lum-pulse-ring {
     width: 18px;
@@ -300,11 +413,11 @@
     animation: lum-spin 0.8s linear infinite;
 }
 
-@keyframes lum-spin {
-    to { transform: rotate(360deg); }
-}
+@keyframes lum-spin { to { transform: rotate(360deg); } }
 
-/* ---- RESULT AREA ---- */
+/* ============================================
+   RESULT
+   ============================================ */
 
 .lum-result-wrap {
     display: none;
@@ -313,19 +426,11 @@
     animation: lum-fade-up 0.4s ease-out;
 }
 
-.lum-result-wrap.active {
-    display: flex;
-}
+.lum-result-wrap.active { display: flex; }
 
 @keyframes lum-fade-up {
-    from {
-        opacity: 0;
-        transform: translateY(8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .lum-result-label {
@@ -366,28 +471,19 @@
     overflow-y: auto;
     white-space: pre-wrap;
     word-wrap: break-word;
-    box-shadow:
-        0 0 30px rgba(125, 249, 193, 0.03),
-        inset 0 0 30px rgba(125, 249, 193, 0.01);
+    box-shadow: 0 0 30px rgba(125, 249, 193, 0.03), inset 0 0 30px rgba(125, 249, 193, 0.01);
     scrollbar-width: thin;
     scrollbar-color: var(--lum-subtle) transparent;
 }
 
-.lum-result-content::-webkit-scrollbar {
-    width: 3px;
-}
+.lum-result-content::-webkit-scrollbar { width: 3px; }
+.lum-result-content::-webkit-scrollbar-thumb { background: var(--lum-subtle); border-radius: 2px; }
 
-.lum-result-content::-webkit-scrollbar-thumb {
-    background: var(--lum-subtle);
-    border-radius: 2px;
-}
+/* ============================================
+   ACTIONS
+   ============================================ */
 
-/* ---- ACTION BUTTONS ---- */
-
-.lum-actions {
-    display: flex;
-    gap: 8px;
-}
+.lum-actions { display: flex; gap: 8px; }
 
 .lum-action-btn {
     flex: 1;
@@ -407,13 +503,8 @@
     border: 1px solid;
 }
 
-.lum-action-btn svg {
-    width: 13px;
-    height: 13px;
-    flex-shrink: 0;
-}
+.lum-action-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
 
-/* Inject button */
 .lum-btn-inject {
     background: linear-gradient(135deg, rgba(125, 249, 193, 0.1), rgba(125, 249, 193, 0.04));
     border-color: rgba(125, 249, 193, 0.15);
@@ -425,7 +516,6 @@
     box-shadow: 0 0 24px rgba(125, 249, 193, 0.08);
 }
 
-/* Copy button */
 .lum-btn-copy {
     background: linear-gradient(135deg, rgba(245, 194, 122, 0.08), rgba(245, 194, 122, 0.03));
     border-color: rgba(245, 194, 122, 0.12);
@@ -437,7 +527,6 @@
     box-shadow: 0 0 24px rgba(245, 194, 122, 0.08);
 }
 
-/* Clear button */
 .lum-btn-clear {
     flex: 0 0 auto;
     width: 36px;
@@ -453,7 +542,36 @@
     background: var(--lum-danger-glow);
 }
 
-/* ---- INJECT STATUS TOAST ---- */
+/* ============================================
+   HISTORY CHIPS
+   ============================================ */
+
+.lum-history { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.lum-chip {
+    padding: 4px 10px;
+    background: var(--lum-elevated);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--lum-text-secondary);
+    cursor: pointer;
+    transition: var(--lum-transition);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lum-chip:hover {
+    border-color: rgba(125, 249, 193, 0.15);
+    color: var(--lum-mint);
+    background: var(--lum-mint-glow);
+}
+
+/* ============================================
+   TOAST
+   ============================================ */
 
 .lum-toast {
     position: fixed;
@@ -491,13 +609,25 @@
     box-shadow: 0 4px 20px rgba(240, 112, 112, 0.1);
 }
 
-/* ---- SETTINGS PANEL ---- */
+/* ============================================
+   SETTINGS PANEL
+   ============================================ */
+
+.lum-settings-panel {
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    animation: lum-fade-up 0.3s ease-out;
+}
+
+.lum-settings-panel.lum-settings-open {
+    display: flex;
+}
 
 .lum-settings {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    padding: 12px 0 0;
 }
 
 .lum-settings-group {
@@ -556,23 +686,15 @@
     box-shadow: 0 0 16px rgba(245, 194, 122, 0.05);
 }
 
-/* ---- INJECT SETTINGS (depth, position) ---- */
-
-.lum-inject-settings {
-    display: flex;
-    gap: 8px;
-}
-
-.lum-inject-settings .lum-settings-group {
-    flex: 1;
-}
+.lum-inject-settings { display: flex; gap: 8px; }
+.lum-inject-settings .lum-settings-group { flex: 1; }
 
 .lum-select {
     width: 100%;
     background: var(--lum-deep);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: var(--lum-radius-sm);
-    padding: 8px 10px;
+    padding: 8px 28px 8px 10px;
     font-family: var(--lum-mono);
     font-size: 11px;
     color: var(--lum-text-primary);
@@ -581,161 +703,136 @@
     transition: var(--lum-transition);
     -webkit-appearance: none;
     appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a574f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
 }
 
-.lum-select:focus {
-    border-color: rgba(245, 194, 122, 0.2);
-}
+.lum-select:focus { border-color: rgba(245, 194, 122, 0.2); }
 
 .lum-select option {
     background: var(--lum-surface);
     color: var(--lum-text-primary);
 }
 
-/* ---- DIVIDER ---- */
+/* ---- Model row ---- */
 
-.lum-divider {
-    height: 1px;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.04) 20%,
-        rgba(255, 255, 255, 0.04) 80%,
-        transparent
-    );
-    margin: 4px 0;
+.lum-model-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-/* ---- TOGGLE BUTTON (in SillyTavern header) ---- */
-
-#lumina-toggle {
+.lum-refresh-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
-    background: transparent;
-    border: none;
+    width: 26px;
+    height: 26px;
+    background: rgba(125, 249, 193, 0.06);
+    border: 1px solid rgba(125, 249, 193, 0.1);
+    border-radius: var(--lum-radius-sm);
+    color: var(--lum-mint-dim);
     cursor: pointer;
-    padding: 0;
-    position: relative;
-}
-
-#lumina-toggle svg {
-    width: 20px;
-    height: 20px;
-    color: var(--lum-text-muted, #8e8a83);
     transition: var(--lum-transition);
-    filter: drop-shadow(0 0 0px transparent);
+    padding: 0;
 }
 
-#lumina-toggle:hover svg,
-#lumina-toggle.active svg {
-    color: var(--lum-mint, #7DF9C1);
-    filter: drop-shadow(0 0 6px rgba(125, 249, 193, 0.4));
+.lum-refresh-btn svg {
+    width: 13px;
+    height: 13px;
+    transition: transform 0.3s ease;
 }
 
-/* ---- MOBILE HANDLE ---- */
-
-.lum-mobile-handle {
-    display: none;
-    width: 36px;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--lum-subtle);
-    margin: 10px auto 4px;
-    flex-shrink: 0;
+.lum-refresh-btn:hover {
+    color: var(--lum-mint);
+    background: rgba(125, 249, 193, 0.12);
+    border-color: rgba(125, 249, 193, 0.2);
 }
 
-@media (max-width: 768px) {
-    .lum-mobile-handle {
-        display: block;
-    }
+.lum-refresh-btn.lum-spinning svg {
+    animation: lum-spin 0.6s linear infinite;
 }
 
-/* ---- HISTORY CHIPS ---- */
+.lum-model-status {
+    font-family: var(--lum-mono);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    color: var(--lum-text-muted);
+    margin-top: 2px;
+}
 
-.lum-history {
+.lum-model-status.lum-status-ok { color: var(--lum-mint-dim); }
+.lum-model-status.lum-status-err { color: var(--lum-danger); }
+
+/* ---- Divider ---- */
+
+.lum-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04) 20%, rgba(255, 255, 255, 0.04) 80%, transparent);
+    margin: 4px 0;
+}
+
+/* ============================================
+   CONTEXT SOURCE TOGGLES (checkboxes)
+   ============================================ */
+
+.lum-toggles-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 10px;
 }
 
-.lum-chip {
-    padding: 4px 10px;
-    background: var(--lum-elevated);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 400;
-    color: var(--lum-text-secondary);
-    cursor: pointer;
-    transition: var(--lum-transition);
-    max-width: 180px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.lum-chip:hover {
-    border-color: rgba(125, 249, 193, 0.15);
-    color: var(--lum-mint);
-    background: var(--lum-mint-glow);
-}
-
-/* ---- SECTION TOGGLE ---- */
-
-.lum-section-toggle {
+.lum-toggle-label {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: none;
-    border: none;
     cursor: pointer;
-    padding: 0;
-    font-family: var(--lum-mono);
-    font-size: 10px;
-    color: var(--lum-text-muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    font-size: 11px;
+    color: var(--lum-text-secondary);
     transition: var(--lum-transition);
 }
 
-.lum-section-toggle:hover {
-    color: var(--lum-text-secondary);
+.lum-toggle-label:hover { color: var(--lum-text-primary); }
+
+.lum-toggle-label input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+    background: var(--lum-deep);
+    cursor: pointer;
+    transition: var(--lum-transition);
+    position: relative;
+    flex-shrink: 0;
 }
 
-.lum-section-toggle svg {
-    width: 10px;
-    height: 10px;
-    transition: transform 0.2s ease;
+.lum-toggle-label input[type="checkbox"]:checked {
+    background: rgba(125, 249, 193, 0.15);
+    border-color: rgba(125, 249, 193, 0.35);
 }
 
-.lum-section-toggle.open svg {
-    transform: rotate(90deg);
+.lum-toggle-label input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 4px;
+    width: 4px;
+    height: 8px;
+    border: solid var(--lum-mint);
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
 }
 
-.lum-section-content {
-    display: none;
-}
-
-.lum-section-content.open {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    animation: lum-fade-up 0.25s ease-out;
-}
-
-/* ---- RESPONSIVE ADJUSTMENTS ---- */
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 
 @media (max-width: 768px) {
-    .lum-header {
-        padding: 12px 16px 10px;
-    }
-
-    .lum-body {
-        padding: 12px 16px 16px;
-    }
+    .lum-header { padding: 12px 16px 10px; }
+    .lum-body { padding: 12px 16px 16px; }
 
     .lum-search-textarea {
         min-height: 64px;
@@ -747,12 +844,12 @@
         font-size: 13.5px;
     }
 
-    .lum-actions {
-        flex-wrap: wrap;
-    }
+    .lum-actions { flex-wrap: wrap; }
 
     .lum-action-btn {
         font-size: 11px;
         padding: 9px 10px;
     }
+
+    .lum-toggles-row { gap: 8px; }
 }
