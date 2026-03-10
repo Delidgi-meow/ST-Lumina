@@ -131,6 +131,15 @@ function gatherContext() {
             parts.push(`[USER DESCRIPTION]\n${personaDescription.trim()}`);
         }
     }
+    // ---- World Info / Lorebooks ----
+    const worldInfo = ctx.world_info?.entries || ctx.worldInfo?.entries || {};
+    const wiEntries = Object.values(worldInfo)
+        .filter(e => e.content && !e.disable)
+        .map(e => e.content.trim().slice(0, 300))
+        .filter(Boolean);
+    if (wiEntries.length > 0) {
+        parts.push(`[WORLD INFO]\n${wiEntries.join('\n---\n')}`);
+    }
 
     // ---- Chat history (last N messages) ----
     const chat = ctx.chat || [];
