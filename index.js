@@ -430,33 +430,30 @@ function setupDrag($fab, onTap) {
         $fab.css({ position: 'fixed', top: ny + 'px', left: nx + 'px', right: 'auto', bottom: 'auto' });
     });
 
-    // Drag end
-    $(document).on('mouseup touchend touchcancel', function() {
+    // Drag end + tap — единый обработчик
+    $(document).on('mouseup touchend touchcancel', function(e) {
         if (!dragging) return;
         dragging = false;
         $fab.css('transition', '');
 
         if (moved) {
+            // Было перетаскивание — сохраняем позицию
             const rect = $fab[0].getBoundingClientRect();
             saveSetting('fab_x', Math.round(rect.left));
             saveSetting('fab_y', Math.round(rect.top));
+            moved = false;
+        } else {
+            // Был тап — открываем панель
+            try { (e.originalEvent || e).preventDefault(); } catch(_) {}
+            onTap();
         }
     });
 
-    // Fallback: touchend fires reliably on mobile
-    $fab.on('touchend', function(e) {
-        if (moved) { moved = false; return; }
-        e.preventDefault();
-        e.stopPropagation();
-        tappedByTouch = true;
-        onTap();
-        setTimeout(() => { tappedByTouch = false; }, 350);
-    });
-
-    // Desktop click (skip if already handled by touchend)
+    // ПК: click как запасной (touch уже обработан выше)
     $fab.on('click', function(e) {
         if (moved) { moved = false; return; }
-        if (tappedByTouch) return;
+        // touch уже вызвал onTap через touchend выше — пропускаем дублирование
+        if ((e.originalEvent || e).pointerType === 'touch') return;
         e.preventDefault();
         e.stopPropagation();
         onTap();

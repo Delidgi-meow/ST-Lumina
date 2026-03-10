@@ -49,15 +49,16 @@
     display: flex !important;
     align-items: center;
     justify-content: center;
-    cursor: grab;
-    padding: 6px;
-    border: 1px solid rgba(125, 249, 193, 0.15);
-    border-radius: 50%;
-    background: var(--SmartThemeBlurTintColor, rgba(17, 17, 23, 0.85));
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    padding: 4px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
-    transition: box-shadow 0.2s ease, transform 0.15s ease;
+    touch-action: manipulation;
+    transition: transform 0.15s ease, filter 0.15s ease;
 }
 
 #lumina-fab svg {
@@ -69,27 +70,20 @@
 }
 
 #lumina-fab:hover {
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
-    transform: scale(1.08);
-}
-
-#lumina-fab.lum-fab-active {
-    border-color: rgba(125, 249, 193, 0.35);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(125, 249, 193, 0.1);
+    transform: scale(1.12);
 }
 
 #lumina-fab.lum-fab-active svg {
-    filter: drop-shadow(0 0 8px rgba(125, 249, 193, 0.5));
+    filter: drop-shadow(0 0 10px rgba(125, 249, 193, 0.7));
+    color: #a8ffd8;
 }
 
 /* Mobile — larger touch target */
 @media (max-width: 768px) {
     #lumina-fab {
-        width: 44px;
-        height: 44px;
-        padding: 8px;
-        cursor: pointer;
-        touch-action: manipulation;
+        width: 46px;
+        height: 46px;
+        padding: 6px;
     }
 }
 
