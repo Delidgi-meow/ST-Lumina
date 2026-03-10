@@ -384,59 +384,59 @@ const FAB_HTML = `<div id="lumina-fab" title="Lumina Search">${ICONS.lumina}</di
 // ---- DRAG LOGIC (robust mobile + desktop) ----
 
 function setupDrag($fab, onTap) {
-    let isMiniDragging = false;
-    let miniMoved = false;
-    let miniClickAllowed = true;
-    let miniOffset = { x: 0, y: 0 };
+    let dragging = false;
+    let dragMoved = false;
+    let startX = 0, startY = 0;
+    let startLeft = 0, startTop = 0;
+    const DRAG_THRESHOLD = 8; // px — меньше этого считается тапом
 
-    function getCoords(e) {
+    function clientXY(e) {
         const ev = e.originalEvent || e;
         if (ev.touches && ev.touches[0]) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
         return { x: ev.clientX, y: ev.clientY };
     }
 
-    // Тап — открыть/закрыть панель
-    $fab.on('click touchend', function(e) {
-        if (!miniClickAllowed) return;
-        e.preventDefault();
-        e.stopPropagation();
-        onTap();
-    });
-
-    // Начало перетаскивания
     $fab.on('mousedown touchstart', function(e) {
-        isMiniDragging = true;
-        miniMoved = false;
-        miniClickAllowed = true;
-        const pos = $fab.position();
-        $fab.css({ top: pos.top + 'px', left: pos.left + 'px', right: 'auto', bottom: 'auto' });
-        const coords = getCoords(e);
-        miniOffset = { x: coords.x - pos.left, y: coords.y - pos.top };
-        e.stopPropagation();
+        dragging = true;
+        dragMoved = false;
+        const c = clientXY(e);
+        startX = c.x;
+        startY = c.y;
+        // Берём позицию через getBoundingClientRect — работает корректно и на мобиле
+        const rect = $fab[0].getBoundingClientRect();
+        startLeft = rect.left;
+        startTop = rect.top;
+        // Фиксируем текущую позицию через left/top чтобы right/bottom не мешали
+        $fab.css({ position: 'fixed', left: startLeft + 'px', top: startTop + 'px', right: 'auto', bottom: 'auto' });
     });
 
-    // Движение
     $(document).on('mousemove.lumfab touchmove.lumfab', function(e) {
-        if (!isMiniDragging) return;
-        miniMoved = true;
-        miniClickAllowed = false;
-        const coords = getCoords(e);
-        const w = $fab.outerWidth(), h = $fab.outerHeight();
-        const nx = Math.max(0, Math.min(coords.x - miniOffset.x, window.innerWidth - w));
-        const ny = Math.max(0, Math.min(coords.y - miniOffset.y, window.innerHeight - h));
-        $fab.css({ top: ny + 'px', left: nx + 'px' });
+        if (!dragging) return;
+        const c = clientXY(e);
+        const dx = c.x - startX;
+        const dy = c.y - startY;
+        if (!dragMoved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+            dragMoved = true;
+        }
+        if (!dragMoved) return;
         e.preventDefault();
+        const w = $fab.outerWidth(), h = $fab.outerHeight();
+        const nx = Math.max(0, Math.min(startLeft + dx, window.innerWidth - w));
+        const ny = Math.max(0, Math.min(startTop + dy, window.innerHeight - h));
+        $fab.css({ left: nx + 'px', top: ny + 'px' });
     });
 
-    // Конец перетаскивания
     $(document).on('mouseup.lumfab touchend.lumfab', function() {
-        if (!isMiniDragging) return;
-        isMiniDragging = false;
-        if (miniMoved) {
+        if (!dragging) return;
+        dragging = false;
+        if (dragMoved) {
+            // Сохраняем новую позицию
             const rect = $fab[0].getBoundingClientRect();
             saveSetting('fab_x', Math.round(rect.left));
             saveSetting('fab_y', Math.round(rect.top));
-            setTimeout(() => { miniClickAllowed = true; }, 50);
+        } else {
+            // Это был тап — открываем/закрываем панель
+            onTap();
         }
     });
 
@@ -625,23 +625,8 @@ jQuery(async () => {
 
     function togglePanel() {
         panelOpen = !panelOpen;
-
-        // Принудительно задаём позицию через JS — CSS медиа-запросы ненадёжны в ST
-        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        if (isMobile) {
-            panel.style.top = 'auto';
-            panel.style.bottom = '0';
-            panel.style.left = '0';
-            panel.style.right = '0';
-            panel.style.width = '100%';
-            panel.style.height = 'auto';
-            panel.style.maxHeight = '80vh';
-            panel.style.borderRadius = '14px 14px 0 0';
-        }
-
         panel.classList.toggle('lum-visible', panelOpen);
         $fab.toggleClass('lum-fab-active', panelOpen);
-        if (panelOpen && !isMobile) queryInput?.focus();
         if (panelOpen) updateContextIndicator();
     }
 
