@@ -15,6 +15,7 @@ const DEFAULT_SETTINGS = {
     temperature: 0.85,
     context_messages: 15,
     include_card: true,
+    include_wi: true,
     history: [],
     fab_x: -1,
     fab_y: -1,
@@ -132,13 +133,15 @@ function gatherContext() {
         }
     }
     // ---- World Info / Lorebooks ----
-    const worldInfo = ctx.world_info?.entries || ctx.worldInfo?.entries || {};
-    const wiEntries = Object.values(worldInfo)
-        .filter(e => e.content && !e.disable)
-        .map(e => e.content.trim().slice(0, 300))
-        .filter(Boolean);
-    if (wiEntries.length > 0) {
-        parts.push(`[WORLD INFO]\n${wiEntries.join('\n---\n')}`);
+    if (s.include_wi) {
+        const worldInfo = ctx.world_info?.entries || ctx.worldInfo?.entries || {};
+        const wiEntries = Object.values(worldInfo)
+            .filter(e => e.content && !e.disable)
+            .map(e => e.content.trim().slice(0, 300))
+            .filter(Boolean);
+        if (wiEntries.length > 0) {
+            parts.push(`[WORLD INFO]\n${wiEntries.join('\n---\n')}`);
+        }
     }
 
     // ---- Chat history (last N messages) ----
@@ -338,6 +341,13 @@ function buildPanelHTML() {
                             <select class="lum-select" id="lum-include-card">
                                 <option value="true" ${s.include_card ? 'selected' : ''}>Yes</option>
                                 <option value="false" ${!s.include_card ? 'selected' : ''}>No</option>
+                            </select>
+                        </div>
+                        <div class="lum-settings-group">
+                            <label class="lum-settings-label">Include Lorebooks</label>
+                            <select class="lum-select" id="lum-include-wi">
+                                <option value="true" ${s.include_wi ? 'selected' : ''}>Yes</option>
+                                <option value="false" ${!s.include_wi ? 'selected' : ''}>No</option>
                             </select>
                         </div>
                     </div>
@@ -811,6 +821,13 @@ jQuery(async () => {
     if (includeCardElem) {
         includeCardElem.addEventListener('change', () => {
             saveSetting('include_card', includeCardElem.value === 'true');
+        });
+    }
+
+    const includeWiElem = document.getElementById('lum-include-wi');
+    if (includeWiElem) {
+        includeWiElem.addEventListener('change', () => {
+            saveSetting('include_wi', includeWiElem.value === 'true');
         });
     }
 
